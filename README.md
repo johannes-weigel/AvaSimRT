@@ -47,3 +47,9 @@ make dev
 ```
 
 Code changes take effect immediately without reinstalling the package.
+
+Tests can be executed with:
+
+```bash
+make test
+```

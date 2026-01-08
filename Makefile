@@ -12,13 +12,13 @@ install: venv
 	$(BIN)/pip install .
 
 dev: venv
-	$(BIN)/pip install -e .
+	$(BIN)/pip install -e .[dev]
 
 test: dev
 	$(BIN)/pytest -q
 
 run: dev
-	$(BIN)/avalanche-uwb-sim <ARGS>
+	$(BIN)/avasimrt <ARGS>
 
 clean:
 	rm -rf $(VENV) .pytest_cache .ruff_cache dist build *.egg-info
