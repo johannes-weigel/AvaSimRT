@@ -1,14 +1,40 @@
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-
 import yaml
 
 
 def _generate_run_id() -> str:
+    import uuid
     return uuid.uuid4().hex
+
+
+@dataclass(frozen=True, slots=True)
+class NodeConfig:
+    x: float = 0.0
+    y: float = 0.0
+    z: float | None = None
+    size: float = 0.2
+
+    def __post_init__(self) -> None:
+        if self.size <= 0:
+            raise ValueError(f"node.size must be > 0, got {self.size!r}")
+
+
+@dataclass(frozen=True, slots=True)
+class AnchorConfig:
+    id: str
+    x: float
+    y: float
+    z: float | None = None
+    size: float = 0.2
+
+    def __post_init__(self) -> None:
+        if not self.id:
+            raise ValueError("anchor.id must not be empty")
+        if self.size <= 0:
+            raise ValueError(f"anchor.size must be > 0, got {self.size!r}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,4 +58,3 @@ class SimConfig:
             raise ValueError("Config file must contain a YAML mapping at top level.")
 
         return cls(**data)
-
