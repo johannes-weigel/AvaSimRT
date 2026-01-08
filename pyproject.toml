@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "avasimrt"
+dynamic = ["version"]
+description = "Coupled PyBullet and Sionna RT simulations for UWB-based motion measurements in snow avalanches"
+readme = "README.md"
+license = { text = "MIT" }
+
+authors = [
+  { name = "Johannes Weigel", email = "johannes@weigel.dev" }
+]
+
+requires-python = ">=3.11,<3.12"
+
+dependencies = [
+  "numpy==1.26.4",
+  "pybullet==3.2.7",
+  "tensorflow==2.19.1",
+  "sionna==1.2.1",
+  "sionna-rt==1.2.1",
+  "matplotlib==3.10.7",
+  "mitsuba==3.7.1",
+  "trimesh==4.9.0",
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: MIT License",
+]
+
+
+[project.scripts]
+avalanche-uwb-sim = "avalanche_uwb_sim.cli:main"
+
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

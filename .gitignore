@@ -1,2 +1,44 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+
 .python-version
-.venv
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Logs / runtime artifacts
+*.log
+
+# Local outputs / generated data
+outputs/
+results/
+tmp/
+
+# Jupyter
+.ipynb_checkpoints/
