@@ -12,3 +12,7 @@ def _generate_run_id() -> str:
 class SimConfig:
     """Top-level configuration for a single simulation run."""
     run_id: str = field(default_factory=_generate_run_id)
+
+    output: str = "output"
+    delete_existing: bool = False
+
