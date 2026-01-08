@@ -19,7 +19,7 @@ def run(config: SimConfig) -> SimResult:
     # placeholder
     return SimResult(
         successful=True,
-        run_id=config.run_id,
         message="empty run completed",
+        run_id=config.run_id,
         output_dir=prep.path,
     )
