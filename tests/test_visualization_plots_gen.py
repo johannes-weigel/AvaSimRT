@@ -74,16 +74,7 @@ def test_save_all_visualizations_creates_multiple_files(tmp_path: Path) -> None:
         _make_sample(1.0, "anchor-1", distance=11.0, mean_db=-41.0),
     ]
 
-    sim_result = SimResult(
-        successful=True,
-        message="ok",
-        run_id="run-x",
-        output_dir=None,
-        created_at_utc=datetime.now(timezone.utc),
-        samples=samples,
-    )
-
-    save_all_visualizations(sim_result, out_dir=tmp_path)
+    save_all_visualizations(samples, out_dir=tmp_path)
 
     # overview
     overview = tmp_path / "mean_db_distance_over_time.png"

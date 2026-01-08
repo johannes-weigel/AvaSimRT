@@ -66,19 +66,16 @@ def test_export_simresult_to_csv_writes_header_plus_3_rows(tmp_path: Path) -> No
         )
     ]
 
-    sim = SimResult(
-        samples=[
-            Sample(timestamp=0.0, node=node, readings=readings),
-            Sample(timestamp=1.0, node=node, readings=readings),
-            Sample(timestamp=2.0, node=node, readings=readings),
-        ],
-        successful=True, run_id="42"
-    )
+    samples = [
+        Sample(timestamp=0.0, node=node, readings=readings),
+        Sample(timestamp=1.0, node=node, readings=readings),
+        Sample(timestamp=2.0, node=node, readings=readings)
+    ]
 
     out = tmp_path / "results.csv"
 
     # Act
-    csv.export_simresult_to_csv(sim, out)
+    csv.export_simresult_to_csv(samples, out)
 
     # Assert: correct number of lines
     text = out.read_text(encoding="utf-8")

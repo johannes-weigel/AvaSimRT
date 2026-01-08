@@ -19,7 +19,7 @@ def _get_anchor_reading_at_step(samples: list[Sample], anchor_id: str, step_inde
     return reading
 
 
-def handle_visualization_command(sim_result: SimResult, command: str) -> None:
+def handle_visualization_command(samples: list[Sample], command: str) -> None:
     """Handle interactive visualization commands.
 
     Supported syntax:
@@ -27,7 +27,6 @@ def handle_visualization_command(sim_result: SimResult, command: str) -> None:
       - "<id>@<step>"    : show detail for anchor <id> at step index <step>
       - "<id>@"          : anchor-over-time view
     """
-    samples = sim_result.samples
     cmd = command.strip()
     if not cmd:
         return
@@ -58,12 +57,9 @@ def handle_visualization_command(sim_result: SimResult, command: str) -> None:
     plot_amp_phase_for_reading(reading=reading, graphs="both", prefix="", show=True, save_dir=None, amp_in_db=True)
 
 
-def interactive_visualization_shell(sim_result: SimResult) -> None:
+def interactive_visualization_shell(samples: list[Sample]) -> None:
     """CLI loop for interactive visualization."""
-    if not sim_result.samples:
-        print("No results available for interactive visualization.")
-        return
-
+    
     print("\nInteractive visualization:")
     print("  @           -> overview (mean_db + distance over time)")
     print("  <id>@<step> -> anchor <id> at step index <step>")
@@ -84,7 +80,7 @@ def interactive_visualization_shell(sim_result: SimResult) -> None:
             continue
 
         try:
-            handle_visualization_command(sim_result, cmd)
+            handle_visualization_command(samples, cmd)
         except Exception as e:
             logger.exception("Error while handling visualization command %r", cmd)
             print(f"Error: {e}")

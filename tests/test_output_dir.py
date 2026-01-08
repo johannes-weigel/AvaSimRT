@@ -48,6 +48,7 @@ def test_run_fails_if_output_dir_not_empty_and_no_delete(tmp_path, monkeypatch) 
 def test_run_deletes_existing_output_dir_if_flag_set(tmp_path, monkeypatch) -> None:
     """
     If delete_existing is True, an existing non-empty directory is removed and recreated.
+    The new run may only contain results.csv.
     """
     monkeypatch.chdir(tmp_path)
 
@@ -61,6 +62,13 @@ def test_run_deletes_existing_output_dir_if_flag_set(tmp_path, monkeypatch) -> N
     assert result.successful is True
     assert isinstance(result.output_dir, Path)
 
-    assert result.output_dir.exists()
-    assert result.output_dir.is_dir()
-    assert list(result.output_dir.iterdir()) == []
+    out = result.output_dir
+    assert out.exists()
+    assert out.is_dir()
+
+    entries = list(out.iterdir())
+
+    # exactly one file: results.csv
+    assert len(entries) == 1
+    assert entries[0].is_file()
+    assert entries[0].name == "results.csv"

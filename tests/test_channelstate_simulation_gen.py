@@ -13,7 +13,7 @@ from avasimrt.channelstate.config import (
     RenderConfig,
     SceneConfig,
 )
-from avasimrt.channelstate import simulation as cs
+import avasimrt.channelstate.simulation as cs
 
 from avasimrt.result import Sample, NodeSnapshot
 

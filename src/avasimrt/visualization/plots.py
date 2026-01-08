@@ -216,9 +216,8 @@ def plot_mean_db_and_distance_over_time(
         plt.close(fig)
 
 
-def save_all_visualizations(sim_result: SimResult, out_dir: Path) -> None:
+def save_all_visualizations(samples: list[Sample], out_dir: Path) -> None:
     """Save overview plot and per-sample per-anchor detail plots."""
-    samples = sim_result.samples
     if not samples:
         logger.info("No samples given, skipping save_all_visualizations.")
         return

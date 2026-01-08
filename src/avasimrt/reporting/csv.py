@@ -24,7 +24,7 @@ def _freq_to_token(freq: float) -> str:
 
 
 def export_simresult_to_csv(
-    sim_result: SimResult,
+    samples: list[Sample],
     csv_path: Path,
     *,
     options: CsvExportConfig = CsvExportConfig(),
@@ -36,7 +36,6 @@ def export_simresult_to_csv(
       - timestamp, node snapshot fields
       - discovered per-anchor/per-antenna/per-frequency: *_real, *_imag
     """
-    samples = sim_result.samples
     anchor_cols = _discover_anchor_columns(samples)
 
     base_fields = [
