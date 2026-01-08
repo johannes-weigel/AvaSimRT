@@ -9,8 +9,7 @@ import numpy as np
 from matplotlib import rcParams
 
 from avasimrt.result import AnchorReading, Sample, SimResult
-
-from .math import amps_to_db, magnitude, phase_deg
+from avasimrt.math import amps_to_db, magnitude, phase_deg
 
 logger = logging.getLogger(__name__)
 

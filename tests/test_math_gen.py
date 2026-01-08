@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from avasimrt.result import ComplexReading
-from avasimrt.visualization.math import amps_to_db, magnitude, phase_deg
+from avasimrt.math import amps_to_db, magnitude, phase_deg
 
 
 def test_magnitude() -> None:
