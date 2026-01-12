@@ -34,20 +34,10 @@ def _connect(p, cfg: MotionConfig) -> int:
 
 
 def _disconnect(p) -> None:
-    # pybullet tolerates disconnect() even if already disconnected in many setups,
-    # but we keep it explicit.
     try:
         p.disconnect()
     except Exception:
         logger.exception("pybullet disconnect failed")
-
-
-def _load_terrain_urdf(p, urdf: str = "plane.urdf", *, base_position=(0, 0, 0)) -> int:
-    terrain_id = p.loadURDF(urdf, basePosition=list(base_position))
-    if terrain_id < 0:
-        raise RuntimeError(f"failed to load URDF terrain: {urdf}")
-    return terrain_id
-
 
 def _load_terrain_mesh(p, mesh_path: str | Path, *, scale: float = 1.0) -> int:
     mesh_path = str(Path(mesh_path))
@@ -188,9 +178,7 @@ def simulate_motion(
     cfg: MotionConfig,
     node: NodeConfig,
     anchors: Sequence[AnchorConfig] = (),
-    terrain_mesh: str | Path | None = None,
     terrain_mesh_scale: float = 1.0,
-    use_plane_if_no_mesh: bool = True,
 ) -> tuple[list[Sample], list[tuple[str, float, float, float]]]:
     """
     Runs the pybullet motion step and returns:
@@ -201,12 +189,11 @@ def simulate_motion(
     _connect(p, cfg)
 
     try:
-        if terrain_mesh is not None:
-            terrain_id = _load_terrain_mesh(p, terrain_mesh, scale=terrain_mesh_scale)
+        if cfg.scene.obj_path is not None:
+            terrain_id = _load_terrain_mesh(p, cfg.scene.obj_path, scale=terrain_mesh_scale)
         else:
-            if not use_plane_if_no_mesh:
-                raise ValueError("terrain_mesh is None and use_plane_if_no_mesh=False")
-            terrain_id = _load_terrain_urdf(p, "plane.urdf")
+            raise ValueError("terrain_mesh is None")
+            
 
         _apply_terrain_dynamics(p, terrain_id, cfg)
 

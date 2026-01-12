@@ -186,7 +186,7 @@ def resolve_config(args: CliArgs) -> SimConfig:
 
     return SimConfig(
         run_id=args.run_id if args.run_id is not None else SimConfig().run_id,
-        output=args.output,
+        output=Path(args.output),
         delete_existing=args.delete_existing,
         debug=args.debug,
         node=node,

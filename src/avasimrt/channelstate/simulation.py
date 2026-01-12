@@ -111,12 +111,10 @@ def _evaluate_cfr(
 
     readings: list[AnchorReading] = []
 
-    # Keep your original indexing scheme; it assumes two RX polarizations/channels (H/V)
-    # and 1x1 arrays. If you later change arrays, this function is the place to generalize.
     for i_anchor, anchor_cfg in enumerate(anchors):
 
         def values_from_index(i_pol: int) -> list[ComplexReading]:
-            h = h_raw[0][i_pol][i_anchor][0][0]  # same as old code :contentReference[oaicite:1]{index=1}
+            h = h_raw[0][i_pol][i_anchor][0][0]
             return [
                 ComplexReading(freq=float(freqs[c_id]), real=float(c.real), imag=float(c.imag))
                 for c_id, c in enumerate(h)
@@ -188,10 +186,8 @@ def estimate_channelstate(
         logger.warning("ChannelState: no motion results to process")
         return []
 
-    # Node radius: use the first snapshot's node? If you prefer, pass node size separately.
     rx_radius = 0.2
     try:
-        # if NodeSnapshot stores radius/size later, you can derive it here
         rx_radius = 0.2
     except Exception:
         pass

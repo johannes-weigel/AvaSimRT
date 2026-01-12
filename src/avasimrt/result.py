@@ -44,8 +44,6 @@ class Sample:
     image: Path | None = None
 
 
-# ---- result wrapper ----
-
 @dataclass(frozen=True, slots=True)
 class SimResult:
     """Top-level run result integrating metadata + produced samples."""

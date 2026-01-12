@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from avasimrt.result import AnchorReading, Sample, SimResult
+from avasimrt.result import AnchorReading, Sample
 
 from .plots import plot_amp_phase_for_reading, plot_mean_db_and_distance_over_time, show_anchor_over_time
 

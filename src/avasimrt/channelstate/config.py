@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Mapping, Any
+
+from avasimrt.helpers import coerce_int, coerce_float
 
 
 @dataclass(frozen=True, slots=True)
@@ -13,6 +16,13 @@ class SceneConfig:
         if not self.xml_path.exists():
             raise FileNotFoundError(f"Scene XML does not exist: {self.xml_path}")
 
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SceneConfig":
+        d = dict(data)
+        return cls(
+            xml_path=Path(d["xml_path"]),
+            out_dir=Path(d["out_dir"]),
+        )
 
 @dataclass(frozen=True, slots=True)
 class ChannelConfig:
@@ -32,6 +42,17 @@ class ChannelConfig:
         if self.reflection_depth < 0:
             raise ValueError("reflection_depth must be >= 0")
 
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any] | None) -> "ChannelConfig":
+        d = dict(data or {})
+        return cls(
+            freq_center=coerce_float(d.get("freq_center", cls.freq_center)),
+            sc_num=coerce_int(d.get("sc_num", cls.sc_num)),
+            sc_spacing=coerce_float(d.get("sc_spacing", cls.sc_spacing)),
+            reflection_depth=coerce_int(d.get("reflection_depth", cls.reflection_depth)),
+            seed=coerce_int(d.get("seed", cls.seed)),
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class RenderConfig:
@@ -48,6 +69,19 @@ class RenderConfig:
             raise ValueError("distance must be > 0")
         if self.every_n_steps < 0:
             raise ValueError("every_n_steps must be >= 0")
+    
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any] | None) -> "RenderConfig":
+        d = dict(data or {})
+        defaults = cls()
+
+        return cls(
+            enabled=bool(d.get("enabled", defaults.enabled)),
+            every_n_steps=coerce_int(d.get("every_n_steps", defaults.every_n_steps)),
+            width=coerce_int(d.get("width", defaults.width)),
+            height=coerce_int(d.get("height", defaults.height)),
+            distance=coerce_float(d.get("distance", defaults.distance)),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,3 +90,20 @@ class ChannelStateConfig:
     channel: ChannelConfig = ChannelConfig()
     render: RenderConfig = RenderConfig()
     debug: bool = False
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "ChannelStateConfig":
+        d = dict(data)
+
+        scene = SceneConfig.from_dict(d["scene"])
+
+        channel = ChannelConfig.from_dict(d.get("channel"))
+        render = RenderConfig.from_dict(d.get("render"))
+        debug = bool(d.get("debug", cls.debug))
+
+        return cls(
+            scene=scene,
+            channel=channel,
+            render=render,
+            debug=debug,
+        )

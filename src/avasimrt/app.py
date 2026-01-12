@@ -64,9 +64,7 @@ def run(config: SimConfig) -> SimResult:
         motion_results, resolved_anchors = simulate_motion(
             cfg=config.motion,
             node=config.node,
-            anchors=config.anchors,
-            terrain_mesh=None,
-            use_plane_if_no_mesh=True,
+            anchors=config.anchors
         )
 
     anchors_z = _anchors_with_resolved_z(config.anchors, resolved_anchors)

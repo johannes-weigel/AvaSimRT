@@ -13,14 +13,6 @@ class PrepareDirResult:
     path: Path | None
     message: str
 
-
-def resolve_output_base(config: SimConfig) -> Path:
-    base = (config.output or "").strip()
-    if not base:
-        base = "output"
-    return Path(base)
-
-
 def prepare_output_dir(config: SimConfig) -> PrepareDirResult:
     """
     Prepare output directory: <base>/<run_id>
@@ -31,7 +23,7 @@ def prepare_output_dir(config: SimConfig) -> PrepareDirResult:
     - base must exist (create if needed)
     - run_dir must either be non-existent, or empty, or delete_existing=True
     """
-    base = resolve_output_base(config)
+    base = config.output
     run_dir = base / config.run_id
 
     try:
