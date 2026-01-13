@@ -1,0 +1,55 @@
+run_id: nordkette
+output: output
+delete_existing: true
+
+node:
+  x: 0.0
+  y: 0.0
+  z: null
+  size: 0.2
+
+anchors:
+  - id: A-01
+    x: -50.0
+    y: 20.0
+    z: null
+    size: 0.2
+  - id: A-02
+    x: 80.0
+    y: -30.0
+    z: null
+    size: 0.2
+
+motion:
+  scene:
+    obj_path: examples/nordkette/assets/scene.obj
+  time:
+    sim_time: 60.0
+    sampling_rate: 1.0
+    time_step: 0.004166666666666667
+  physics:
+    gravity_z: -9.81
+  debug:
+    mode: DIRECT
+
+channelstate:
+  scene:
+    xml_path: examples/nordkette/assets/scene.xml
+    out_dir: output/nordkette/frames
+  channel:
+    freq_center: 3.8e9
+    sc_num: 101
+    sc_spacing: 5e6
+    reflection_depth: 3
+    seed: 41
+  render:
+    enabled: false
+    every_n_steps: 0
+
+reporting:
+  enabled: true
+  csv: true
+
+visualization:
+  save_all_plots: false
+  interactive_plots: false
