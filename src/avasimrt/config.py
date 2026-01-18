@@ -105,7 +105,7 @@ class SimConfig:
             run_id=d.get("run_id", generate_run_id()),
 
             output = Path(d.get("output", "output")),
-            delete_existing=d.get("delete_existing", "False"),
+            delete_existing=coerce_bool(d.get("delete_existing", False)),
             debug=coerce_bool(d["debug"]) if "debug" in d else cls.debug,
 
             node=NodeConfig.from_dict(get_dict(d, "node", "node") or {}),
