@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from typing import List
+
 from .config import AnchorConfig
 from .result import ComplexReading, NodeSnapshot
 
@@ -25,7 +25,7 @@ def power_to_db(p: np.ndarray) -> np.ndarray:
 def db20_to_amp(db20: float) -> float:
     return 10.0 ** (db20 / 20.0)
 
-def mean_db_from_values(values: List[ComplexReading]) -> float:
+def mean_db_from_values(values: list[ComplexReading]) -> float:
     if not values:
         return float("nan")
 
