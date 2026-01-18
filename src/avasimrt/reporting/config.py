@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from avasimrt.helpers import coerce_bool
+
 
 @dataclass(frozen=True, slots=True)
 class CsvExportConfig:
@@ -21,6 +23,6 @@ class ReportingConfig:
         d = dict(data or {})
 
         return cls(
-            enabled=bool(d.get("enabled", cls.enabled)),
-            csv=bool(d.get("csv", cls.csv)),
+            enabled=coerce_bool(d.get("enabled", cls.enabled)),
+            csv=coerce_bool(d.get("csv", cls.csv)),
         )

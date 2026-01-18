@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Any
 
-from avasimrt.helpers import coerce_int, coerce_float
+from avasimrt.helpers import coerce_int, coerce_float, coerce_bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,7 +76,7 @@ class RenderConfig:
         defaults = cls()
 
         return cls(
-            enabled=bool(d.get("enabled", defaults.enabled)),
+            enabled=coerce_bool(d.get("enabled", defaults.enabled)),
             every_n_steps=coerce_int(d.get("every_n_steps", defaults.every_n_steps)),
             width=coerce_int(d.get("width", defaults.width)),
             height=coerce_int(d.get("height", defaults.height)),
@@ -99,7 +99,7 @@ class ChannelStateConfig:
 
         channel = ChannelConfig.from_dict(d.get("channel"))
         render = RenderConfig.from_dict(d.get("render"))
-        debug = bool(d.get("debug", cls.debug))
+        debug = coerce_bool(d.get("debug", cls.debug))
 
         return cls(
             scene=scene,

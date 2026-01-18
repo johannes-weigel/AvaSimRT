@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Literal, Mapping
 from pathlib import Path
 
-from avasimrt.helpers import coerce_float
+from avasimrt.helpers import coerce_float, coerce_all_floats
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,10 +82,7 @@ class TerrainDynamics:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any] | None) -> "TerrainDynamics":
-        d = dict(data or {})
-        for k, v in list(d.items()):
-            d[k] = coerce_float(v)
-        return cls(**d)
+        return cls(**coerce_all_floats(dict(data or {})))
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,10 +98,7 @@ class NodeDynamics:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any] | None) -> "NodeDynamics":
-        d = dict(data or {})
-        for k, v in list(d.items()):
-            d[k] = coerce_float(v)
-        return cls(**d)
+        return cls(**coerce_all_floats(dict(data or {})))
 
 
 @dataclass(frozen=True, slots=True)

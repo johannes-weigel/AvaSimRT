@@ -87,3 +87,7 @@ def get_list(d, key, name):
     if not isinstance(v, list):
         raise ValueError(f"{name} must be a list")
     return v
+
+def coerce_all_floats(data: dict[str, Any]) -> dict[str, float]:
+    """Coerce all values in a dict to floats. Helper for config classes with all-float fields."""
+    return {k: coerce_float(v) for k, v in data.items()}
