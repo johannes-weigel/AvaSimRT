@@ -8,7 +8,7 @@ from pathlib import Path
 from .app import run
 from .config import AnchorConfig, NodeConfig, SimConfig, VisualizationConfig, ReportingConfig
 
-from .channelstate.config import ChannelStateConfig, SceneConfig as ChannelSceneConfig, ChannelConfig, RenderConfig
+from .channelstate.config import ChannelStateConfig, ChannelStateSceneConfig, ChannelConfig, RenderConfig
 from .motion.config import MotionConfig, MotionDebug, MotionPhysics, MotionTime
 
 
@@ -169,7 +169,7 @@ def resolve_config(args: CliArgs) -> SimConfig:
         channelstate = None
     else:
         channelstate = ChannelStateConfig(
-            scene=ChannelSceneConfig(xml_path=Path(args.scene_xml), out_dir=Path(args.output) / "channelstate" / "frames"),
+            scene=ChannelStateSceneConfig(xml_path=Path(args.scene_xml), out_dir=Path(args.output) / "channelstate" / "frames"),
             channel=ChannelConfig(
                 freq_center=args.freq_center,
                 sc_num=args.sc_num,

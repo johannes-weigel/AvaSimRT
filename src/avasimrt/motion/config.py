@@ -108,7 +108,7 @@ class NodeDynamics:
 
 
 @dataclass(frozen=True, slots=True)
-class SceneConfig:
+class MotionSceneConfig:
     obj_path: Path | None = None
 
     def __post_init__(self) -> None:
@@ -116,7 +116,7 @@ class SceneConfig:
             raise FileNotFoundError(f"Scene OBJ does not exist: {self.obj_path}")
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any] | None) -> "SceneConfig":
+    def from_dict(cls, data: Mapping[str, Any] | None) -> "MotionSceneConfig":
         d = dict(data or {})
         obj_path = d.get("obj_path")
         return cls(
@@ -127,7 +127,7 @@ class SceneConfig:
 @dataclass(frozen=True, slots=True)
 class MotionConfig:
     """Configuration for the motion step (pybullet)."""
-    scene: SceneConfig = SceneConfig()
+    scene: MotionSceneConfig = MotionSceneConfig()
     time: MotionTime = MotionTime()
     physics: MotionPhysics = MotionPhysics()
     debug: MotionDebug = MotionDebug()
@@ -138,7 +138,7 @@ class MotionConfig:
     def from_dict(cls, data: Mapping[str, Any]) -> "MotionConfig":
         m = dict(data or {})
 
-        scene = SceneConfig.from_dict(m.get("scene"))
+        scene = MotionSceneConfig.from_dict(m.get("scene"))
         time = MotionTime.from_dict(m.get("time"))
         physics = MotionPhysics.from_dict(m.get("physics"))
         debug = MotionDebug.from_dict(m.get("debug"))

@@ -8,7 +8,7 @@ from avasimrt.helpers import coerce_int, coerce_float
 
 
 @dataclass(frozen=True, slots=True)
-class SceneConfig:
+class ChannelStateSceneConfig:
     xml_path: Path
     out_dir: Path
 
@@ -17,7 +17,7 @@ class SceneConfig:
             raise FileNotFoundError(f"Scene XML does not exist: {self.xml_path}")
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "SceneConfig":
+    def from_dict(cls, data: Mapping[str, Any]) -> "ChannelStateSceneConfig":
         d = dict(data)
         return cls(
             xml_path=Path(d["xml_path"]),
@@ -86,7 +86,7 @@ class RenderConfig:
 
 @dataclass(frozen=True, slots=True)
 class ChannelStateConfig:
-    scene: SceneConfig
+    scene: ChannelStateSceneConfig
     channel: ChannelConfig = ChannelConfig()
     render: RenderConfig = RenderConfig()
     debug: bool = False
@@ -95,7 +95,7 @@ class ChannelStateConfig:
     def from_dict(cls, data: Mapping[str, Any]) -> "ChannelStateConfig":
         d = dict(data)
 
-        scene = SceneConfig.from_dict(d["scene"])
+        scene = ChannelStateSceneConfig.from_dict(d["scene"])
 
         channel = ChannelConfig.from_dict(d.get("channel"))
         render = RenderConfig.from_dict(d.get("render"))
