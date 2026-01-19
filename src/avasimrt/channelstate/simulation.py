@@ -17,7 +17,7 @@ from sionna.rt import (
     subcarrier_frequencies,
 )
 
-from avasimrt.config import AnchorConfig
+from avasimrt.preprocessing.result import ResolvedPosition
 from avasimrt.result import AnchorReading, AntennaReading, ComplexReading, Sample
 from avasimrt.math import distance, mean_db_from_values
 from .config import ChannelStateConfig
@@ -58,7 +58,7 @@ def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
     return scene
 
 
-def _build_context(cfg: ChannelStateConfig, anchors: Sequence[AnchorConfig], *, rx_radius: float, scene_xml: Path) -> _SionnaContext:
+def _build_context(cfg: ChannelStateConfig, anchors: Sequence[ResolvedPosition], *, rx_radius: float, scene_xml: Path) -> _SionnaContext:
     scene = _setup_scene(cfg, scene_xml=scene_xml)
 
     txs: list[Transmitter] = []
@@ -103,7 +103,7 @@ def _evaluate_cfr(
     *,
     paths,
     cfg: ChannelStateConfig,
-    anchors: Sequence[AnchorConfig],
+    anchors: Sequence[ResolvedPosition],
     node_snapshot,
 ) -> list[AnchorReading]:
     freqs = subcarrier_frequencies(cfg.channel.sc_num, cfg.channel.sc_spacing)
@@ -176,7 +176,7 @@ def _render_if_enabled(
 def estimate_channelstate(
     *,
     cfg: ChannelStateConfig,
-    anchors: Sequence[AnchorConfig],
+    anchors: Sequence[ResolvedPosition],
     motion_results: Sequence[Sample],
     out_dir: Path,
     scene_xml: Path

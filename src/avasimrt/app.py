@@ -5,10 +5,11 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
-from .config import AnchorConfig, SimConfig
+from .config import SimConfig
 from .io import prepare_output_dir
 from .result import SimResult
 
+from .preprocessing.heights import resolve_positions
 from .motion.simulation import simulate_motion
 from .channelstate.simulation import estimate_channelstate
 from .reporting.csv import export_simresult_to_csv
@@ -34,18 +35,6 @@ def log_step(name: str):
         logger.info("=== %s: DONE in %.2f s ===", name, end - start)
 
 
-def _anchors_with_resolved_z(
-    anchors: list[AnchorConfig],
-    resolved: list[tuple[str, float, float, float]],
-) -> list[AnchorConfig]:
-    z_by_id = {a_id: z for (a_id, _x, _y, z) in resolved}
-    out: list[AnchorConfig] = []
-    for a in anchors:
-        z = a.z if a.z is not None else z_by_id.get(a.id)
-        out.append(AnchorConfig(id=a.id, x=a.x, y=a.y, z=z, size=a.size))
-    return out
-
-
 def run(config: SimConfig) -> SimResult:
     """Run the full simulation pipeline (motion -> channelstate -> reporting/visualization)."""
     prep = prepare_output_dir(config)
@@ -61,16 +50,15 @@ def run(config: SimConfig) -> SimResult:
     scene_xml: Path = config.scene_xml
     scene_obj: Path = config.scene_obj
 
+    node, anchors = resolve_positions(scene_obj, config.node, config.anchors)
+
     # 1) MOTION (PyBullet)
     with log_step("MOTION"):
-        motion_results, resolved_anchors = simulate_motion(
+        motion_results = simulate_motion(
             cfg=config.motion,
-            node=config.node,
-            anchors=config.anchors,
+            node=node,
             scene_obj=scene_obj
         )
-
-    anchors_z = _anchors_with_resolved_z(config.anchors, resolved_anchors)
 
     # 2) CHANNELSTATE (Sionna RT)
     if config.channelstate is None:
@@ -79,7 +67,7 @@ def run(config: SimConfig) -> SimResult:
         with log_step("CHANNELSTATE"):
             results = estimate_channelstate(
                 cfg=config.channelstate,
-                anchors=anchors_z,
+                anchors=anchors,
                 motion_results=motion_results,
                 scene_xml=scene_xml,
                 out_dir=out_dir

@@ -8,7 +8,7 @@ from typing import Sequence
 
 import pybullet_data
 
-from avasimrt.config import AnchorConfig, NodeConfig
+from avasimrt.preprocessing.result import ResolvedPosition
 from avasimrt.result import NodeSnapshot, Sample
 from avasimrt.motion.config import MotionConfig
 
@@ -101,34 +101,12 @@ def _apply_node_dynamics(p, node_id: int, cfg: MotionConfig) -> None:
     )
 
 
-def height_on_terrain(
-    p,
-    *,
-    x: float,
-    y: float,
-    terrain_id: int | None = None,
-    z_start: float = 1000.0,
-    z_end: float = -10.0,
-) -> float:
-    hits = p.rayTest([x, y, z_start], [x, y, z_end])
-    hit_uid, hit_fraction, hit_pos = hits[0][0], hits[0][2], hits[0][3]
-    if hit_fraction == 1.0 or hit_uid < 0:
-        raise RuntimeError(f"No hit at x={x}, y={y}.")
-    return float(hit_pos[2])
-
-
 def spawn_node(
     p,
     *,
     cfg: MotionConfig,
-    node_cfg: NodeConfig,
-    terrain_id: int,
+    node_cfg: ResolvedPosition,
 ) -> int:
-    if node_cfg.z is None:
-        h = height_on_terrain(p, x=node_cfg.x, y=node_cfg.y, terrain_id=terrain_id)
-        z = h + node_cfg.size * 1.02
-    else:
-        z = node_cfg.z
 
     col = p.createCollisionShape(p.GEOM_SPHERE, radius=node_cfg.size)
     vis = p.createVisualShape(p.GEOM_SPHERE, radius=node_cfg.size, rgbaColor=[0.89, 0.39, 0.0, 1.0])
@@ -136,29 +114,10 @@ def spawn_node(
         baseMass=1,
         baseCollisionShapeIndex=col,
         baseVisualShapeIndex=vis,
-        basePosition=[node_cfg.x, node_cfg.y, z],
+        basePosition=[node_cfg.x, node_cfg.y, node_cfg.z],
     )
     _apply_node_dynamics(p, node_id, cfg)
     return node_id
-
-
-def resolve_anchor_heights(
-    p,
-    anchors: Sequence[AnchorConfig],
-    *,
-    terrain_id: int,
-) -> list[tuple[str, float, float, float]]:
-    """
-    Returns anchor positions with z resolved (does NOT mutate configs).
-    """
-    out: list[tuple[str, float, float, float]] = []
-    for a in anchors:
-        z = a.z
-        if z is None:
-            h = height_on_terrain(p, x=a.x, y=a.y, terrain_id=terrain_id)
-            z = h + a.size
-        out.append((a.id, a.x, a.y, float(z)))
-    return out
 
 
 def _set_camera_target(p, cfg: MotionConfig, pos) -> None:
@@ -176,11 +135,10 @@ def _set_camera_target(p, cfg: MotionConfig, pos) -> None:
 def simulate_motion(
     *,
     cfg: MotionConfig,
-    node: NodeConfig,
-    anchors: Sequence[AnchorConfig] = (),
+    node: ResolvedPosition,
     terrain_mesh_scale: float = 1.0,
     scene_obj: Path
-) -> tuple[list[Sample], list[tuple[str, float, float, float]]]:
+) -> list[Sample]:
     """
     Runs the pybullet motion step and returns:
       - motion_results: list[Result] containing timestamp+NodeSnapshot
@@ -198,9 +156,7 @@ def simulate_motion(
 
         _apply_terrain_dynamics(p, terrain_id, cfg)
 
-        resolved = resolve_anchor_heights(p, anchors, terrain_id=terrain_id) if anchors else []
-
-        node_id = spawn_node(p, cfg=cfg, node_cfg=node, terrain_id=terrain_id)
+        node_id = spawn_node(p, cfg=cfg, node_cfg=node)
 
         dt = cfg.time.time_step
         sim_time = cfg.time.sim_time
@@ -247,7 +203,7 @@ def simulate_motion(
                 time.sleep(dt)
 
         logger.info("Motion finished: %d snapshots collected", len(out))
-        return out, resolved
+        return out
 
     finally:
         _disconnect(p)

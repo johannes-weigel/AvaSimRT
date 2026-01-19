@@ -15,6 +15,7 @@ from avasimrt.motion.config import (
     MotionTime,
 )
 from avasimrt.motion import simulation as ms
+from avasimrt.preprocessing.result import ResolvedPosition
 
 
 def _cfg(*, sim_time: float = 2.01, sampling_rate: float = 1.0, time_step: float = 0.01) -> MotionConfig:
@@ -28,19 +29,17 @@ def _cfg(*, sim_time: float = 2.01, sampling_rate: float = 1.0, time_step: float
 def test_simulate_motion_plane_collects_three_samples(tmp_path: Path) -> None:
     cfg = _cfg(sim_time=2.01, sampling_rate=1.0, time_step=0.01)
 
-    node = NodeConfig(x=0.0, y=0.0, z=1.0, size=0.1)
+    node = ResolvedPosition(id="NODE", x=0.0, y=0.0, z=1.0, size=0.1)
     
     scene_obj = tmp_path / "plane.obj"
     scene_obj.write_text("v -10 -10 0\nv 10 -10 0\nv 10 10 0\nv -10 10 0\nf 1 2 3\nf 1 3 4\n", encoding="utf-8")
 
-    results, resolved = ms.simulate_motion(
+    results = ms.simulate_motion(
         cfg=cfg,
         node=node,
-        anchors=(),
         scene_obj=scene_obj,
     )
 
-    assert resolved == []
     assert len(results) == 3  # t≈0,1,2
 
     ts = [r.timestamp for r in results]
@@ -62,53 +61,20 @@ def test_simulate_motion_plane_collects_three_samples(tmp_path: Path) -> None:
         assert all(isfinite(float(x)) for x in vel)
 
 
-def test_simulate_motion_resolves_anchor_heights_without_mutation(tmp_path: Path) -> None:
+def test_simulate_motion_single_sample(tmp_path: Path) -> None:
+    """Test that a very short simulation produces at least one sample."""
     cfg = _cfg(sim_time=0.05, sampling_rate=0.05, time_step=0.01)
 
-    anchors = [
-        AnchorConfig(id="A-01", x=0.0, y=0.0, z=None, size=0.2),
-        AnchorConfig(id="A-02", x=1.0, y=0.0, z=5.0, size=0.2),
-    ]
-    node = NodeConfig(x=0.0, y=0.0, z=1.0, size=0.1)
+    node = ResolvedPosition(id="NODE", x=0.0, y=0.0, z=1.0, size=0.1)
     
     scene_obj = tmp_path / "plane.obj"
     scene_obj.write_text("v -10 -10 0\nv 10 -10 0\nv 10 10 0\nv -10 10 0\nf 1 2 3\nf 1 3 4\n", encoding="utf-8")
 
-    _results, resolved = ms.simulate_motion(
+    results = ms.simulate_motion(
         cfg=cfg,
         node=node,
-        anchors=anchors,
         scene_obj=scene_obj,
     )
 
-    assert len(resolved) == 2
-    assert resolved[0][0] == "A-01"
-    assert resolved[1][0] == "A-02"
-
-    # A-01: resolved ~ plane height + size
-    assert isfinite(resolved[0][3])
-    assert resolved[0][3] == pytest.approx(0.0 + anchors[0].size, abs=1e-2)
-
-    # A-02: preserved
-    assert resolved[1][3] == pytest.approx(5.0, abs=1e-9)
-
-    # No mutation of original configs
-    assert anchors[0].z is None
-    assert anchors[1].z == 5.0
-
-
-def test_height_on_terrain_hits_plane_near_zero(tmp_path: Path) -> None:
-    # Test the helper directly with a real pybullet session, but keep it minimal.
-    cfg = _cfg(sim_time=0.01, sampling_rate=0.01, time_step=0.01)
-    
-    scene_obj = tmp_path / "plane.obj"
-    scene_obj.write_text("v -10 -10 0\nv 10 -10 0\nv 10 10 0\nv -10 10 0\nf 1 2 3\nf 1 3 4\n", encoding="utf-8")
-
-    p = ms._load_pybullet()
-    ms._connect(p, cfg)
-    try:
-        terrain_id = ms._load_terrain_mesh(p, scene_obj)
-        h = ms.height_on_terrain(p, x=0.0, y=0.0, terrain_id=terrain_id, z_start=10.0, z_end=-10.0)
-        assert abs(h - 0.0) < 1e-3
-    finally:
-        ms._disconnect(p)
+    assert len(results) >= 1
+    assert all(r.timestamp >= 0.0 for r in results)

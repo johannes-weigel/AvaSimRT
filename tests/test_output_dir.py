@@ -12,10 +12,10 @@ def test_run_returns_output_dir_as_path(tmp_path, monkeypatch) -> None:
     """
     monkeypatch.chdir(tmp_path)
     
-    scene_xml = tmp_path / "scene.xml"
-    scene_xml.write_text("<scene/>", encoding="utf-8")
     scene_obj = tmp_path / "scene.obj"
     scene_obj.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n", encoding="utf-8")
+    scene_xml = tmp_path / "scene.xml"
+    scene_xml.write_text("<scene/>", encoding="utf-8")
 
     cfg = SimConfig(run_id="run-1", output=Path("output"), delete_existing=False, scene_xml=scene_xml, scene_obj=scene_obj)
     result = run(cfg)
@@ -37,10 +37,10 @@ def test_run_fails_if_output_dir_not_empty_and_no_delete(tmp_path, monkeypatch) 
     """
     monkeypatch.chdir(tmp_path)
     
-    scene_xml = tmp_path / "scene.xml"
-    scene_xml.write_text("<scene/>", encoding="utf-8")
     scene_obj = tmp_path / "scene.obj"
     scene_obj.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n", encoding="utf-8")
+    scene_xml = tmp_path / "scene.xml"
+    scene_xml.write_text("<scene/>", encoding="utf-8")
 
     run_dir = tmp_path / "output" / "run-2"
     run_dir.mkdir(parents=True)
@@ -62,10 +62,10 @@ def test_run_deletes_existing_output_dir_if_flag_set(tmp_path, monkeypatch) -> N
     """
     monkeypatch.chdir(tmp_path)
     
-    scene_xml = tmp_path / "scene.xml"
-    scene_xml.write_text("<scene/>", encoding="utf-8")
     scene_obj = tmp_path / "scene.obj"
     scene_obj.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n", encoding="utf-8")
+    scene_xml = tmp_path / "scene.xml"
+    scene_xml.write_text("<scene/>", encoding="utf-8")
 
     run_dir = tmp_path / "output" / "run-3"
     run_dir.mkdir(parents=True)
