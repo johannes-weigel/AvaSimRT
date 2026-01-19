@@ -23,7 +23,7 @@ def prepare(*,
     
     # HEIGHT MAP
     if (heightmap is None):
-        heightmap, heightmap_metadata = generate_heightmap(scene_obj, 1)
+        heightmap, heightmap_metadata = generate_heightmap(scene_obj, 0.1)
         with open(out_dir/"heightmap_meta.json", 'w') as f:
             json.dump(heightmap_metadata, f, indent=2)
     np.save(out_dir/"heightmap.npy", heightmap)
