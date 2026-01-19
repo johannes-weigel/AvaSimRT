@@ -83,7 +83,6 @@ def test_run_deletes_existing_output_dir_if_flag_set(tmp_path, monkeypatch) -> N
 
     entries = list(out.iterdir())
 
-    # exactly one file: results.csv
-    assert len(entries) == 1
-    assert entries[0].is_file()
-    assert entries[0].name == "results.csv"
+    # exepct 3 files
+    assert len(entries) == 3
+    

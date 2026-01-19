@@ -50,7 +50,7 @@ def run(config: SimConfig) -> SimResult:
     scene_xml: Path = config.scene_xml
     scene_obj: Path = config.scene_obj
 
-    node, anchors = prepare(scene_obj=scene_obj, node=config.node, anchors=config.anchors)
+    node, anchors, _ = prepare(out_dir=out_dir, scene_obj=scene_obj, node=config.node, anchors=config.anchors)
 
     # 1) MOTION (PyBullet)
     with log_step("MOTION"):
