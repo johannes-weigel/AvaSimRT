@@ -9,7 +9,7 @@ from .config import SimConfig
 from .io import prepare_output_dir
 from .result import SimResult
 
-from .preprocessing.heights import resolve_positions
+from .preprocessing.preprocessor import prepare
 from .motion.simulation import simulate_motion
 from .channelstate.simulation import estimate_channelstate
 from .reporting.csv import export_simresult_to_csv
@@ -50,7 +50,7 @@ def run(config: SimConfig) -> SimResult:
     scene_xml: Path = config.scene_xml
     scene_obj: Path = config.scene_obj
 
-    node, anchors = resolve_positions(scene_obj, config.node, config.anchors)
+    node, anchors = prepare(scene_obj=scene_obj, node=config.node, anchors=config.anchors)
 
     # 1) MOTION (PyBullet)
     with log_step("MOTION"):

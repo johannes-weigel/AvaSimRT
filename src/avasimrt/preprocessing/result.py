@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence, NamedTuple
 
 @dataclass
 class ResolvedPosition:
@@ -9,3 +10,7 @@ class ResolvedPosition:
     y: float
     z: float
     size: float
+
+class PreprocessorResult(NamedTuple):
+    node: ResolvedPosition
+    anchors: Sequence[ResolvedPosition]
