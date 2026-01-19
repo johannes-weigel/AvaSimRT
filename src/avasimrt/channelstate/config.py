@@ -1,28 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Mapping, Any
 
 from avasimrt.helpers import coerce_int, coerce_float, coerce_bool
 
-
-@dataclass(frozen=True, slots=True)
-class ChannelStateSceneConfig:
-    xml_path: Path
-    out_dir: Path
-
-    def __post_init__(self) -> None:
-        if not self.xml_path.exists():
-            raise FileNotFoundError(f"Scene XML does not exist: {self.xml_path}")
-
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "ChannelStateSceneConfig":
-        d = dict(data)
-        return cls(
-            xml_path=Path(d["xml_path"]),
-            out_dir=Path(d["out_dir"]),
-        )
 
 @dataclass(frozen=True, slots=True)
 class ChannelConfig:
@@ -86,7 +68,6 @@ class RenderConfig:
 
 @dataclass(frozen=True, slots=True)
 class ChannelStateConfig:
-    scene: ChannelStateSceneConfig
     channel: ChannelConfig = ChannelConfig()
     render: RenderConfig = RenderConfig()
     debug: bool = False
@@ -95,14 +76,12 @@ class ChannelStateConfig:
     def from_dict(cls, data: Mapping[str, Any]) -> "ChannelStateConfig":
         d = dict(data)
 
-        scene = ChannelStateSceneConfig.from_dict(d["scene"])
 
         channel = ChannelConfig.from_dict(d.get("channel"))
         render = RenderConfig.from_dict(d.get("render"))
         debug = coerce_bool(d.get("debug", cls.debug))
 
         return cls(
-            scene=scene,
             channel=channel,
             render=render,
             debug=debug,

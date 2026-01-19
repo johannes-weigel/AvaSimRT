@@ -33,8 +33,8 @@ class _SionnaContext:
     txs: list[Transmitter]
 
 
-def _setup_scene(cfg: ChannelStateConfig) -> Scene:
-    scene = load_scene(cfg.scene.xml_path.as_posix())
+def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
+    scene = load_scene(scene_xml.as_posix())
 
     scene.tx_array = PlanarArray(
         num_rows=1,
@@ -58,8 +58,8 @@ def _setup_scene(cfg: ChannelStateConfig) -> Scene:
     return scene
 
 
-def _build_context(cfg: ChannelStateConfig, anchors: Sequence[AnchorConfig], *, rx_radius: float) -> _SionnaContext:
-    scene = _setup_scene(cfg)
+def _build_context(cfg: ChannelStateConfig, anchors: Sequence[AnchorConfig], *, rx_radius: float, scene_xml: Path) -> _SionnaContext:
+    scene = _setup_scene(cfg, scene_xml=scene_xml)
 
     txs: list[Transmitter] = []
     for a in anchors:
@@ -144,6 +144,7 @@ def _render_if_enabled(
     step_idx: int,
     node_pos: mi.Point3f,
     paths,
+    out_dir: Path
 ) -> Path | None:
     r = cfg.render
     if not r.enabled or r.every_n_steps <= 0:
@@ -151,8 +152,8 @@ def _render_if_enabled(
     if step_idx % r.every_n_steps != 0:
         return None
 
-    cfg.scene.out_dir.mkdir(parents=True, exist_ok=True)
-    img_path = cfg.scene.out_dir / f"scene_{step_idx}.png"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    img_path = out_dir / f"scene_{step_idx}.png"
 
     cam = Camera(
         position=mi.Point3f(
@@ -177,6 +178,8 @@ def estimate_channelstate(
     cfg: ChannelStateConfig,
     anchors: Sequence[AnchorConfig],
     motion_results: Sequence[Sample],
+    out_dir: Path,
+    scene_xml: Path
 ) -> list[Sample]:
     """
     Computes channel state (CFR-derived readings) for each motion result time step.
@@ -196,7 +199,7 @@ def estimate_channelstate(
         missing = [a.id for a in anchors if a.z is None]
         raise ValueError(f"Anchors must have resolved z before channelstate: {missing}")
 
-    ctx = _build_context(cfg, anchors, rx_radius=rx_radius)
+    ctx = _build_context(cfg, anchors, rx_radius=rx_radius, scene_xml=scene_xml)
 
     total = len(motion_results)
     log_every = max(1, total // 20)
@@ -209,7 +212,7 @@ def estimate_channelstate(
         ctx.rx.position = node_pos
 
         paths = _solve_paths(ctx, cfg)
-        img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths)
+        img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths, out_dir=out_dir)
 
         readings = _evaluate_cfr(paths=paths, cfg=cfg, anchors=anchors, node_snapshot=r0.node)
         out.append(Sample(timestamp=r0.timestamp, node=r0.node, readings=readings, image=img))

@@ -6,9 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .app import run
+from .helpers import generate_run_id
 from .config import AnchorConfig, NodeConfig, SimConfig, VisualizationConfig, ReportingConfig
 
-from .channelstate.config import ChannelStateConfig, ChannelStateSceneConfig, ChannelConfig, RenderConfig
+from .channelstate.config import ChannelStateConfig, ChannelConfig, RenderConfig
 from .motion.config import MotionConfig, MotionDebug, MotionPhysics, MotionTime
 
 
@@ -24,6 +25,7 @@ class CliArgs:
     node: str | None
     anchors: list[str]
     scene_xml: str | None
+    scene_obj: str | None
 
     # motion
     sim_time: float
@@ -97,6 +99,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Anchor as 'id,x,y,z[,size]'. Use z=none to resolve via motion.",
     )
     p.add_argument("--scene-xml", type=str, help="Mitsuba/SionnaRT scene XML path (required for channelstate).")
+    p.add_argument("--scene-obj", type=str, help="PyBullet scene OBJ path (required for motion).")
 
     p.add_argument("--sim-time", type=float, default=60.0)
     p.add_argument("--sampling-rate", type=float, default=1.0)
@@ -129,6 +132,7 @@ def parse_args(argv: list[str] | None = None) -> CliArgs:
         node=ns.node,
         anchors=list(ns.anchors),
         scene_xml=ns.scene_xml,
+        scene_obj=ns.scene_obj,
         sim_time=ns.sim_time,
         sampling_rate=ns.sampling_rate,
         time_step=ns.time_step,
@@ -164,12 +168,14 @@ def resolve_config(args: CliArgs) -> SimConfig:
         debug=MotionDebug(mode="GUI" if args.debug else "DIRECT"),
     )
 
-    channelstate: ChannelStateConfig | None
-    if args.scene_xml is None:
+    if args.scene_xml is None or args.scene_obj is None:
+        if args.scene_xml is not None or args.scene_obj is not None:
+            raise ValueError("Both --scene-xml and --scene-obj are required if --config is not set")
         channelstate = None
+        scene_xml = Path(".")
+        scene_obj = Path(".")
     else:
         channelstate = ChannelStateConfig(
-            scene=ChannelStateSceneConfig(xml_path=Path(args.scene_xml), out_dir=Path(args.output) / "channelstate" / "frames"),
             channel=ChannelConfig(
                 freq_center=args.freq_center,
                 sc_num=args.sc_num,
@@ -183,9 +189,13 @@ def resolve_config(args: CliArgs) -> SimConfig:
             ),
             debug=args.debug,
         )
+        scene_xml = Path(args.scene_xml)
+        scene_obj = Path(args.scene_obj)
 
     return SimConfig(
-        run_id=args.run_id if args.run_id is not None else SimConfig().run_id,
+        run_id=args.run_id if args.run_id is not None else generate_run_id(),
+        scene_xml=scene_xml,
+        scene_obj=scene_obj,
         output=Path(args.output),
         delete_existing=args.delete_existing,
         debug=args.debug,

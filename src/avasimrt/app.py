@@ -58,13 +58,16 @@ def run(config: SimConfig) -> SimResult:
         )
 
     out_dir: Path = prep.path
+    scene_xml: Path = config.scene_xml
+    scene_obj: Path = config.scene_obj
 
     # 1) MOTION (PyBullet)
     with log_step("MOTION"):
         motion_results, resolved_anchors = simulate_motion(
             cfg=config.motion,
             node=config.node,
-            anchors=config.anchors
+            anchors=config.anchors,
+            scene_obj=scene_obj
         )
 
     anchors_z = _anchors_with_resolved_z(config.anchors, resolved_anchors)
@@ -78,6 +81,8 @@ def run(config: SimConfig) -> SimResult:
                 cfg=config.channelstate,
                 anchors=anchors_z,
                 motion_results=motion_results,
+                scene_xml=scene_xml,
+                out_dir=out_dir
             )
 
     # 3) REPORTING (CSV export)

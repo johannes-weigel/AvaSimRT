@@ -66,6 +66,9 @@ class AnchorConfig:
 @dataclass(frozen=True, slots=True)
 class SimConfig:
     """Top-level configuration for a single simulation run."""
+    scene_xml: Path
+    scene_obj: Path
+
     run_id: str = field(default_factory=generate_run_id)
 
     output: Path = Path("output")
@@ -103,6 +106,8 @@ class SimConfig:
 
         return cls(
             run_id=d.get("run_id", generate_run_id()),
+            scene_xml = Path(str(d.get("xml"))),
+            scene_obj = Path(str(d.get("obj"))),
 
             output = Path(d.get("output", "output")),
             delete_existing=coerce_bool(d.get("delete_existing", False)),

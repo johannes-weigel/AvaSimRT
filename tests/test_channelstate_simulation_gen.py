@@ -11,7 +11,6 @@ from avasimrt.channelstate.config import (
     ChannelStateConfig,
     ChannelConfig,
     RenderConfig,
-    SceneConfig,
 )
 import avasimrt.channelstate.simulation as cs
 
@@ -43,12 +42,7 @@ class FakeCtx:
 
 
 def _cfg(tmp_path: Path, *, render_enabled: bool = False, every_n: int = 0) -> ChannelStateConfig:
-    # xml must exist due to __post_init__ validation
-    xml = tmp_path / "scene.xml"
-    xml.write_text("<scene/>", encoding="utf-8")
-
     return ChannelStateConfig(
-        scene=SceneConfig(xml_path=xml, out_dir=tmp_path / "frames"),
         channel=ChannelConfig(freq_center=3.8e9, sc_num=5, sc_spacing=5e6, reflection_depth=1, seed=1),
         render=RenderConfig(enabled=render_enabled, every_n_steps=every_n),
         debug=False,
@@ -77,6 +71,10 @@ def _anchors_with_z() -> list[AnchorConfig]:
 def test_estimate_channelstate_empty_motion_results_returns_empty(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = _cfg(tmp_path)
     anchors = _anchors_with_z()
+    
+    scene_xml = tmp_path / "scene.xml"
+    scene_xml.write_text("<scene/>", encoding="utf-8")
+    out_dir = tmp_path / "frames"
 
     # Ensure no expensive setup accidentally happens
     called = {"build": 0}
@@ -87,7 +85,7 @@ def test_estimate_channelstate_empty_motion_results_returns_empty(tmp_path: Path
 
     monkeypatch.setattr(cs, "_build_context", fake_build_context)
 
-    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=[])
+    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=[], scene_xml=scene_xml, out_dir=out_dir)
 
     assert out == []
     assert called["build"] == 0
@@ -97,6 +95,10 @@ def test_estimate_channelstate_preserves_timestamps_and_sets_rx_position(tmp_pat
     cfg = _cfg(tmp_path)
     anchors = _anchors_with_z()
     motion = _motion_results()
+    
+    scene_xml = tmp_path / "scene.xml"
+    scene_xml.write_text("<scene/>", encoding="utf-8")
+    out_dir = tmp_path / "frames"
 
     ctx = FakeCtx(rx=FakeRx(), txs=[FakeTx(a.id) for a in anchors])
 
@@ -114,7 +116,7 @@ def test_estimate_channelstate_preserves_timestamps_and_sets_rx_position(tmp_pat
     monkeypatch.setattr(cs, "_evaluate_cfr", fake_eval)
     monkeypatch.setattr(cs, "_render_if_enabled", lambda **kwargs: None)
 
-    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion)
+    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion, scene_xml=scene_xml, out_dir=out_dir)
 
     assert len(out) == 3
     assert [r.timestamp for r in out] == [0.0, 1.0, 2.0]
@@ -130,6 +132,10 @@ def test_estimate_channelstate_calls_render_on_schedule(tmp_path: Path, monkeypa
     cfg = _cfg(tmp_path, render_enabled=True, every_n=2)
     anchors = _anchors_with_z()
     motion = _motion_results()
+    
+    scene_xml = tmp_path / "scene.xml"
+    scene_xml.write_text("<scene/>", encoding="utf-8")
+    out_dir = tmp_path / "frames"
 
     ctx = FakeCtx(rx=FakeRx(), txs=[FakeTx(a.id) for a in anchors])
 
@@ -139,7 +145,7 @@ def test_estimate_channelstate_calls_render_on_schedule(tmp_path: Path, monkeypa
 
     rendered_steps: list[int] = []
 
-    def fake_render_if_enabled(*, ctx, cfg, step_idx, node_pos, paths):
+    def fake_render_if_enabled(*, ctx, cfg, step_idx, node_pos, paths, out_dir):
         # emulate the real scheduling logic
         r = cfg.render
         if not r.enabled or r.every_n_steps <= 0:
@@ -148,11 +154,11 @@ def test_estimate_channelstate_calls_render_on_schedule(tmp_path: Path, monkeypa
             return None
 
         rendered_steps.append(step_idx)
-        return cfg.scene.out_dir / f"scene_{step_idx}.png"
+        return out_dir / f"scene_{step_idx}.png"
 
     monkeypatch.setattr(cs, "_render_if_enabled", fake_render_if_enabled)
 
-    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion)
+    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion, scene_xml=scene_xml, out_dir=out_dir)
 
     assert len(out) == 3
     assert rendered_steps == [0, 2]
@@ -165,9 +171,13 @@ def test_estimate_channelstate_calls_render_on_schedule(tmp_path: Path, monkeypa
 def test_estimate_channelstate_requires_anchor_z(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     motion = _motion_results()
+    
+    scene_xml = tmp_path / "scene.xml"
+    scene_xml.write_text("<scene/>", encoding="utf-8")
+    out_dir = tmp_path / "frames"
 
     anchors = [AnchorConfig(id="A-01", x=0.0, y=0.0, z=None, size=0.2)]
 
     with pytest.raises(ValueError):
-        cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion)
+        cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion, scene_xml=scene_xml, out_dir=out_dir)
 

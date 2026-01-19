@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Literal, Mapping
-from pathlib import Path
 
 from avasimrt.helpers import coerce_float, coerce_all_floats
 
@@ -100,28 +99,9 @@ class NodeDynamics:
     def from_dict(cls, data: Mapping[str, Any] | None) -> "NodeDynamics":
         return cls(**coerce_all_floats(dict(data or {})))
 
-
-@dataclass(frozen=True, slots=True)
-class MotionSceneConfig:
-    obj_path: Path | None = None
-
-    def __post_init__(self) -> None:
-        if self.obj_path is not None and not self.obj_path.exists():
-            raise FileNotFoundError(f"Scene OBJ does not exist: {self.obj_path}")
-
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any] | None) -> "MotionSceneConfig":
-        d = dict(data or {})
-        obj_path = d.get("obj_path")
-        return cls(
-            obj_path=Path(obj_path) if obj_path else None,
-        )
-
-
 @dataclass(frozen=True, slots=True)
 class MotionConfig:
     """Configuration for the motion step (pybullet)."""
-    scene: MotionSceneConfig = MotionSceneConfig()
     time: MotionTime = MotionTime()
     physics: MotionPhysics = MotionPhysics()
     debug: MotionDebug = MotionDebug()
@@ -132,7 +112,6 @@ class MotionConfig:
     def from_dict(cls, data: Mapping[str, Any]) -> "MotionConfig":
         m = dict(data or {})
 
-        scene = MotionSceneConfig.from_dict(m.get("scene"))
         time = MotionTime.from_dict(m.get("time"))
         physics = MotionPhysics.from_dict(m.get("physics"))
         debug = MotionDebug.from_dict(m.get("debug"))
@@ -140,7 +119,6 @@ class MotionConfig:
         node = NodeDynamics.from_dict(m.get("node"))
 
         return cls(
-            scene=scene,
             time=time,
             physics=physics,
             debug=debug,

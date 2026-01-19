@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from math import isfinite
+from pathlib import Path
 from typing import Sequence
 
 import pytest
@@ -24,17 +25,19 @@ def _cfg(*, sim_time: float = 2.01, sampling_rate: float = 1.0, time_step: float
     )
 
 
-def test_simulate_motion_plane_collects_three_samples() -> None:
+def test_simulate_motion_plane_collects_three_samples(tmp_path: Path) -> None:
     cfg = _cfg(sim_time=2.01, sampling_rate=1.0, time_step=0.01)
 
     node = NodeConfig(x=0.0, y=0.0, z=1.0, size=0.1)
+    
+    scene_obj = tmp_path / "plane.obj"
+    scene_obj.write_text("v -10 -10 0\nv 10 -10 0\nv 10 10 0\nv -10 10 0\nf 1 2 3\nf 1 3 4\n", encoding="utf-8")
 
     results, resolved = ms.simulate_motion(
         cfg=cfg,
         node=node,
         anchors=(),
-        terrain_mesh=None,
-        use_plane_if_no_mesh=True,
+        scene_obj=scene_obj,
     )
 
     assert resolved == []
@@ -59,7 +62,7 @@ def test_simulate_motion_plane_collects_three_samples() -> None:
         assert all(isfinite(float(x)) for x in vel)
 
 
-def test_simulate_motion_resolves_anchor_heights_without_mutation() -> None:
+def test_simulate_motion_resolves_anchor_heights_without_mutation(tmp_path: Path) -> None:
     cfg = _cfg(sim_time=0.05, sampling_rate=0.05, time_step=0.01)
 
     anchors = [
@@ -67,13 +70,15 @@ def test_simulate_motion_resolves_anchor_heights_without_mutation() -> None:
         AnchorConfig(id="A-02", x=1.0, y=0.0, z=5.0, size=0.2),
     ]
     node = NodeConfig(x=0.0, y=0.0, z=1.0, size=0.1)
+    
+    scene_obj = tmp_path / "plane.obj"
+    scene_obj.write_text("v -10 -10 0\nv 10 -10 0\nv 10 10 0\nv -10 10 0\nf 1 2 3\nf 1 3 4\n", encoding="utf-8")
 
     _results, resolved = ms.simulate_motion(
         cfg=cfg,
         node=node,
         anchors=anchors,
-        terrain_mesh=None,
-        use_plane_if_no_mesh=True,
+        scene_obj=scene_obj,
     )
 
     assert len(resolved) == 2
@@ -92,14 +97,17 @@ def test_simulate_motion_resolves_anchor_heights_without_mutation() -> None:
     assert anchors[1].z == 5.0
 
 
-def test_height_on_terrain_hits_plane_near_zero() -> None:
+def test_height_on_terrain_hits_plane_near_zero(tmp_path: Path) -> None:
     # Test the helper directly with a real pybullet session, but keep it minimal.
     cfg = _cfg(sim_time=0.01, sampling_rate=0.01, time_step=0.01)
+    
+    scene_obj = tmp_path / "plane.obj"
+    scene_obj.write_text("v -10 -10 0\nv 10 -10 0\nv 10 10 0\nv -10 10 0\nf 1 2 3\nf 1 3 4\n", encoding="utf-8")
 
     p = ms._load_pybullet()
     ms._connect(p, cfg)
     try:
-        terrain_id = ms._load_terrain_urdf(p, "plane.urdf")
+        terrain_id = ms._load_terrain_mesh(p, scene_obj)
         h = ms.height_on_terrain(p, x=0.0, y=0.0, terrain_id=terrain_id, z_start=10.0, z_end=-10.0)
         assert abs(h - 0.0) < 1e-3
     finally:

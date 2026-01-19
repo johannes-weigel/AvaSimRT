@@ -179,6 +179,7 @@ def simulate_motion(
     node: NodeConfig,
     anchors: Sequence[AnchorConfig] = (),
     terrain_mesh_scale: float = 1.0,
+    scene_obj: Path
 ) -> tuple[list[Sample], list[tuple[str, float, float, float]]]:
     """
     Runs the pybullet motion step and returns:
@@ -189,8 +190,8 @@ def simulate_motion(
     _connect(p, cfg)
 
     try:
-        if cfg.scene.obj_path is not None:
-            terrain_id = _load_terrain_mesh(p, cfg.scene.obj_path, scale=terrain_mesh_scale)
+        if scene_obj is not None:
+            terrain_id = _load_terrain_mesh(p, scene_obj, scale=terrain_mesh_scale)
         else:
             raise ValueError("terrain_mesh is None")
             
