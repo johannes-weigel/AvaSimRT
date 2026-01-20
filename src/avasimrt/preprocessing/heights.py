@@ -88,7 +88,7 @@ def generate_heightmap(
     resolution: float | None = None,
 ) -> tuple[np.ndarray, dict]:
     if resolution is None:
-        resolution = 0.5    
+        resolution = 5    
     start_time = time.perf_counter()
     
     logger.info(f"Loading mesh from {mesh_path}")
