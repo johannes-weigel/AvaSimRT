@@ -26,6 +26,7 @@ class CliArgs:
     anchors: list[str]
     scene_xml: str | None
     scene_obj: str | None
+    scene_blender: str | None
 
     # motion
     sim_time: float
@@ -100,6 +101,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--scene-xml", type=str, help="Mitsuba/SionnaRT scene XML path (required for channelstate).")
     p.add_argument("--scene-obj", type=str, help="PyBullet scene OBJ path (required for motion).")
+    p.add_argument("--scene-blender", type=str, help="Blender scene file (.blend) to export OBJ/XML from.")
 
     p.add_argument("--sim-time", type=float, default=60.0)
     p.add_argument("--sampling-rate", type=float, default=1.0)
@@ -133,6 +135,7 @@ def parse_args(argv: list[str] | None = None) -> CliArgs:
         anchors=list(ns.anchors),
         scene_xml=ns.scene_xml,
         scene_obj=ns.scene_obj,
+        scene_blender=ns.scene_blender,
         sim_time=ns.sim_time,
         sampling_rate=ns.sampling_rate,
         time_step=ns.time_step,
@@ -168,13 +171,33 @@ def resolve_config(args: CliArgs) -> SimConfig:
         debug=MotionDebug(mode="GUI" if args.debug else "DIRECT"),
     )
 
-    if args.scene_xml is None or args.scene_obj is None:
-        if args.scene_xml is not None or args.scene_obj is not None:
-            raise ValueError("Both --scene-xml and --scene-obj are required if --config is not set")
-        channelstate = None
-        scene_xml = Path(".")
-        scene_obj = Path(".")
+    # Validate scene file arguments
+    has_blender = args.scene_blender is not None
+    has_xml = args.scene_xml is not None
+    has_obj = args.scene_obj is not None
+
+    if has_blender:
+        if has_xml or has_obj:
+            raise ValueError("Cannot specify both --scene-blender and --scene-xml/--scene-obj")
+        assert args.scene_blender is not None  # Type guard
+        scene_blender = Path(args.scene_blender)
+        scene_xml = None
+        scene_obj = None
+    elif has_xml and has_obj:
+        assert args.scene_xml is not None and args.scene_obj is not None  # Type guard
+        scene_blender = None
+        scene_xml = Path(args.scene_xml)
+        scene_obj = Path(args.scene_obj)
+    elif has_xml or has_obj:
+        raise ValueError("Both --scene-xml and --scene-obj must be provided together")
     else:
+        # No scene files specified - disable channelstate
+        scene_blender = None
+        scene_xml = None
+        scene_obj = None
+
+    # Configure channelstate based on whether we have scene files
+    if scene_blender is not None or (scene_xml is not None and scene_obj is not None):
         channelstate = ChannelStateConfig(
             channel=ChannelConfig(
                 freq_center=args.freq_center,
@@ -189,13 +212,14 @@ def resolve_config(args: CliArgs) -> SimConfig:
             ),
             debug=args.debug,
         )
-        scene_xml = Path(args.scene_xml)
-        scene_obj = Path(args.scene_obj)
+    else:
+        channelstate = None
 
     return SimConfig(
         run_id=args.run_id if args.run_id is not None else generate_run_id(),
         scene_xml=scene_xml,
         scene_obj=scene_obj,
+        scene_blender=scene_blender,
         output=Path(args.output),
         delete_existing=args.delete_existing,
         debug=args.debug,

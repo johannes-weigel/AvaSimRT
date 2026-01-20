@@ -83,8 +83,8 @@ def test_run_deletes_existing_output_dir_if_flag_set(tmp_path, monkeypatch) -> N
 
     entries = list(out.iterdir())
 
-    # exepct 3 files
-    assert len(entries) == 3
+    # expect 5 files: results.csv, heightmap.npy, heightmap_meta.json, scene.obj, scene.xml
+    assert len(entries) == 5
 
 
 def test_heightmap_visualization(tmp_path, monkeypatch) -> None:

@@ -20,6 +20,7 @@ def _base_args(*, output: str = "out", run_id: str | None = "r1") -> CliArgs:
         anchors=["A-01,0,0,none,0.2"],
         scene_xml=None,
         scene_obj=None,
+        scene_blender=None,
         sim_time=1.0,
         sampling_rate=1.0,
         time_step=0.01,

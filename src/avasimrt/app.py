@@ -47,10 +47,20 @@ def run(config: SimConfig) -> SimResult:
         )
 
     out_dir: Path = prep.path
-    scene_xml: Path = config.scene_xml
-    scene_obj: Path = config.scene_obj
 
-    node, anchors, _ = prepare(out_dir=out_dir, scene_obj=scene_obj, node=config.node, anchors=config.anchors)
+    preprocessing_result = prepare(
+        out_dir=out_dir,
+        scene_blender=config.scene_blender,
+        scene_obj=config.scene_obj,
+        scene_xml=config.scene_xml,
+        node=config.node,
+        anchors=config.anchors,
+    )
+    
+    node = preprocessing_result.node
+    anchors = preprocessing_result.anchors
+    scene_obj = preprocessing_result.scene_obj
+    scene_xml = preprocessing_result.scene_xml
 
     # 1) MOTION (PyBullet)
     with log_step("MOTION"):
