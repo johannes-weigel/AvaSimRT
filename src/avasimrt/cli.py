@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .app import run
-from .helpers import generate_run_id
 from .config import AnchorConfig, NodeConfig, SimConfig, VisualizationConfig, ReportingConfig
 
 from .channelstate.config import ChannelStateConfig, ChannelConfig, RenderConfig
@@ -216,7 +215,7 @@ def resolve_config(args: CliArgs) -> SimConfig:
         channelstate = None
 
     return SimConfig(
-        run_id=args.run_id if args.run_id is not None else generate_run_id(),
+        run_id=args.run_id,
         scene_xml=scene_xml,
         scene_obj=scene_obj,
         scene_blender=scene_blender,

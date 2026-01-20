@@ -84,11 +84,19 @@ def run_blender_export(
     xml_output: Path,
     ply_output: Path,
 ) -> None:
+    if not blend_path.exists():
+        raise FileNotFoundError(f"Blender file not found: {blend_path}")
+    
     script = _get_blender_export_script(obj_output, xml_output, ply_output)
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-        f.write(script)
-        script_path = Path(f.name)
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.py', delete=False, encoding='utf-8'
+        ) as f:
+            f.write(script)
+            script_path = Path(f.name)
+    except OSError as e:
+        raise OSError(f"Failed to create temporary script file: {e}") from e
 
     try:
         cmd = [
@@ -99,12 +107,24 @@ def run_blender_export(
         ]
         logger.info(f"Running Blender export: {' '.join(cmd)}")
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=120,
+                check=False,
+            )
+        except FileNotFoundError as e:
+            raise FileNotFoundError(
+                f"Blender not found. Please install Blender and ensure it's in your PATH. "
+                f"Download from: https://www.blender.org/download/"
+            ) from e
+        except subprocess.TimeoutExpired as e:
+            raise RuntimeError(
+                f"Blender export timed out after 120 seconds. "
+                f"The scene may be too complex or Blender may be stuck."
+            ) from e
 
         if result.returncode != 0:
             error_msg = result.stderr or result.stdout
@@ -114,11 +134,19 @@ def run_blender_export(
                     f"Install it from: https://github.com/mitsuba-renderer/mitsuba-blender\n"
                     f"Blender output: {error_msg}"
                 )
-            raise RuntimeError(
-                f"Blender export failed with code {result.returncode}:\n{error_msg}"
-            )
+            elif result.returncode == 1:
+                raise RuntimeError(
+                    f"Blender export failed - invalid scene or export error:\n{error_msg}"
+                )
+            else:
+                raise RuntimeError(
+                    f"Blender export failed with exit code {result.returncode}:\n{error_msg}"
+                )
 
         logger.debug(f"Blender output:\n{result.stdout}")
 
     finally:
-        script_path.unlink(missing_ok=True)
+        try:
+            script_path.unlink(missing_ok=True)
+        except OSError:
+            logger.warning(f"Failed to delete temporary script: {script_path}")

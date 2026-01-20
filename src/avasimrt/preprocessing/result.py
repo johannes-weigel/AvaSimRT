@@ -18,7 +18,7 @@ class PreprocessorResult(NamedTuple):
     node: ResolvedPosition
     anchors: Sequence[ResolvedPosition]
     heightmap: np.ndarray
+    out_dir: Path
     scene_obj: Path
     scene_xml: Path
-    scene_obj: Path
-    scene_xml: Path
+    run_id: str

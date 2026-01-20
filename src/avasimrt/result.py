@@ -48,7 +48,7 @@ class Sample:
 class SimResult:
     """Top-level run result integrating metadata + produced samples."""
     successful: bool
-    run_id: str
+    run_id: str | None
     created_at_utc: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     message: str | None = None
     output_dir: Path | None = None

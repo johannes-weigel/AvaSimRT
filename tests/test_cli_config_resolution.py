@@ -57,7 +57,8 @@ def test_resolve_config_generates_run_id_when_not_given() -> None:
 
     assert cfg.output == Path("out")
     assert cfg.delete_existing is True
-    assert isinstance(cfg.run_id, str) and cfg.run_id
+    # run_id is None in config - it gets generated later in preprocessing
+    assert cfg.run_id is None
 
 
 def test_resolve_config_uses_config_file_and_ignores_other_flags(tmp_path: Path) -> None:

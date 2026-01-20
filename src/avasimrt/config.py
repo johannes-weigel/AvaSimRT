@@ -10,7 +10,7 @@ from .channelstate.config import ChannelStateConfig
 from .visualization.config import VisualizationConfig
 from .reporting.config import ReportingConfig
 from .helpers import (
-    generate_run_id, coerce_bool, coerce_float, 
+    coerce_bool, coerce_float, 
     get_dict, get_list)
 
 
@@ -70,9 +70,9 @@ class SimConfig:
     scene_obj: Path | None = None
     scene_blender: Path | None = None
 
-    run_id: str = field(default_factory=generate_run_id)
+    run_id: str | None = None
 
-    output: Path = Path("output")
+    output: Path | None = None
     delete_existing: bool = False
 
     # Shared
@@ -106,7 +106,7 @@ class SimConfig:
         d = dict(data or {})
 
         return cls(
-            run_id=d.get("run_id", generate_run_id()),
+            run_id=d.get("run_id"),
             scene_xml = Path(d["xml"]) if d.get("xml") is not None else None,
             scene_obj = Path(d["obj"]) if d.get("obj") is not None else None,
             scene_blender = Path(d["blender"]) if d.get("blender") is not None else None,

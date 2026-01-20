@@ -1,8 +1,6 @@
 from typing import Any
 
-def generate_run_id() -> str:
-    import uuid
-    return uuid.uuid4().hex
+
 
 def _coerce_none(v: Any) -> Any:
     if v is None:
