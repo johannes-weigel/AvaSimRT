@@ -26,6 +26,7 @@ dependencies = [
   "mitsuba==3.7.1",
   "trimesh==4.9.0",
   "PyYAML",
+  "python-dotenv",
 ]
 
 classifiers = [
@@ -55,3 +56,5 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+log_cli = true
+log_cli_level = "INFO"

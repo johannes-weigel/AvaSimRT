@@ -78,6 +78,12 @@ def _get_blender_export_script(
         print("All exports complete")
     ''')
 
+def _resolve_blender_cmd(blender_cmd):
+    if blender_cmd is None:
+        return os.environ.get('AVASIMRT_BLENDER_CMD', 'blender')
+    else:
+        return blender_cmd
+
 
 def run_blender_export(
     blend_path: Path,
@@ -86,8 +92,7 @@ def run_blender_export(
     ply_output: Path,
     blender_cmd: str | None = None,
 ) -> None:
-    if blender_cmd is None:
-        blender_cmd = os.environ.get('AVASIMRT_BLENDER_CMD', 'blender')
+    blender_cmd = _resolve_blender_cmd(blender_cmd)
     
     if not blend_path.exists():
         raise FileNotFoundError(f"Blender file not found: {blend_path}")
