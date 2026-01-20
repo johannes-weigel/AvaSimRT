@@ -1,6 +1,6 @@
 {
-  "resolution_m": 0.5,
-  "computation_time_s": 56.4454,
+  "resolution_m": 1.0,
+  "computation_time_s": 15.0608,
   "bounds": {
     "x_min": -538.144348,
     "x_max": 531.235657,
@@ -8,22 +8,22 @@
     "y_max": 530.160706
   },
   "grid_size": {
-    "n_x": 2140,
-    "n_y": 2104,
-    "total_positions": 4502560
+    "n_x": 1071,
+    "n_y": 1053,
+    "total_positions": 1127763
   },
   "heightmap_stats": {
-    "z_min": 0.3092857599258423,
-    "z_max": 698.9441528320312,
-    "z_range": 698.6348670721054
+    "z_min": 0.612901508808136,
+    "z_max": 698.9657592773438,
+    "z_range": 698.3528577685356
   },
   "coverage": {
-    "valid_positions": 4494118,
-    "coverage_percent": 99.81
+    "valid_positions": 1123540,
+    "coverage_percent": 99.63
   },
   "memory": {
-    "bytes": 54030720,
-    "kilobytes": 52764.38,
-    "megabytes": 51.5277
+    "bytes": 13533156,
+    "kilobytes": 13215.97,
+    "megabytes": 12.9062
   }
 }
