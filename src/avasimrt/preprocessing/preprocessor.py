@@ -24,6 +24,7 @@ def prepare(*,
             scene_blender: Path | None = None,
             scene_obj: Path | None = None,
             scene_xml: Path | None = None,
+            blender_cmd: str | None = None,
             node: NodeConfig,
             anchors: Sequence[AnchorConfig],
             heightmap: np.ndarray | None = None,) -> PreprocessorResult:
@@ -53,7 +54,8 @@ def prepare(*,
             blend_path=scene_blender,
             obj_output=final_obj,
             xml_output=final_xml,
-            ply_output=final_ply)
+            ply_output=final_ply,
+            blender_cmd=blender_cmd)
         logger.info(f"Scene exported to: {out_dir}")
 
     else:

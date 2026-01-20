@@ -34,7 +34,7 @@ def log_step(name: str):
         logger.info("=== %s: DONE in %.2f s ===", name, end - start)
 
 
-def run(config: SimConfig) -> SimResult:
+def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
     """Run the full simulation pipeline (motion -> channelstate -> reporting/visualization)."""
     run_id: str | None = None
     out_dir: Path | None = None
@@ -47,6 +47,7 @@ def run(config: SimConfig) -> SimResult:
             scene_blender=config.scene_blender,
             scene_obj=config.scene_obj,
             scene_xml=config.scene_xml,
+            blender_cmd=blender_cmd,
             node=config.node,
             anchors=config.anchors,
         )

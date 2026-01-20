@@ -21,6 +21,7 @@ def _base_args(*, output: str = "out", run_id: str | None = "r1") -> CliArgs:
         scene_xml=None,
         scene_obj=None,
         scene_blender=None,
+        blender_cmd=None,
         sim_time=1.0,
         sampling_rate=1.0,
         time_step=0.01,

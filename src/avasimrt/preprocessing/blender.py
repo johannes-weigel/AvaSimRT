@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import tempfile
 import textwrap
@@ -83,7 +84,11 @@ def run_blender_export(
     obj_output: Path,
     xml_output: Path,
     ply_output: Path,
+    blender_cmd: str | None = None,
 ) -> None:
+    if blender_cmd is None:
+        blender_cmd = os.environ.get('AVASIMRT_BLENDER_CMD', 'blender')
+    
     if not blend_path.exists():
         raise FileNotFoundError(f"Blender file not found: {blend_path}")
     
@@ -100,7 +105,7 @@ def run_blender_export(
 
     try:
         cmd = [
-            'blender',
+            blender_cmd,
             '--background',
             str(blend_path),
             '--python', str(script_path),
@@ -117,7 +122,9 @@ def run_blender_export(
             )
         except FileNotFoundError as e:
             raise FileNotFoundError(
-                f"Blender not found. Please install Blender and ensure it's in your PATH. "
+                f"Blender executable '{blender_cmd}' not found. "
+                f"Please install Blender and ensure it's in your PATH, "
+                f"or specify the correct path with --blender-cmd. "
                 f"Download from: https://www.blender.org/download/"
             ) from e
         except subprocess.TimeoutExpired as e:

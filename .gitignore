@@ -1,6 +1,7 @@
 # avasimrt
 
 output
+.env
 
 # ---- Python ----
 __pycache__/

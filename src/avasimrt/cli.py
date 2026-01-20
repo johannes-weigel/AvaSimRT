@@ -26,6 +26,7 @@ class CliArgs:
     scene_xml: str | None
     scene_obj: str | None
     scene_blender: str | None
+    blender_cmd: str | None
 
     # motion
     sim_time: float
@@ -101,6 +102,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--scene-xml", type=str, help="Mitsuba/SionnaRT scene XML path (required for channelstate).")
     p.add_argument("--scene-obj", type=str, help="PyBullet scene OBJ path (required for motion).")
     p.add_argument("--scene-blender", type=str, help="Blender scene file (.blend) to export OBJ/XML from.")
+    p.add_argument(
+        "--blender-cmd", 
+        type=str, 
+        default=None,
+        help="Blender executable name or path. Can also be set via AVASIMRT_BLENDER_CMD environment variable. Default: 'blender'"
+    )
 
     p.add_argument("--sim-time", type=float, default=60.0)
     p.add_argument("--sampling-rate", type=float, default=1.0)
@@ -135,6 +142,7 @@ def parse_args(argv: list[str] | None = None) -> CliArgs:
         scene_xml=ns.scene_xml,
         scene_obj=ns.scene_obj,
         scene_blender=ns.scene_blender,
+        blender_cmd=ns.blender_cmd,
         sim_time=ns.sim_time,
         sampling_rate=ns.sampling_rate,
         time_step=ns.time_step,
@@ -238,7 +246,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         args = parse_args(argv)
         config = resolve_config(args)
-        result = run(config)
+        result = run(config, blender_cmd=args.blender_cmd)
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
