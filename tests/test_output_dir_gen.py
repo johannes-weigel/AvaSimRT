@@ -114,21 +114,24 @@ def test_heightmap_visualization(tmp_path, monkeypatch) -> None:
     scene_obj.write_text("\n".join(vertices + faces) + "\n", encoding="utf-8")
     
     # Generate heightmap
-    heightmap, metadata = generate_heightmap(scene_obj, resolution=0.5)
+    heightmap_3d, metadata = generate_heightmap(scene_obj, resolution=0.5)
+    
+    # Extract coordinates and z-values
+    x_coords = heightmap_3d[:, 0, 0]
+    y_coords = heightmap_3d[0, :, 1]
+    heightmap_z = heightmap_3d[:, :, 2]
     
     # Verify basic properties
-    assert heightmap.shape[0] > 0
-    assert heightmap.shape[1] > 0
-    assert not np.all(np.isnan(heightmap))
+    assert heightmap_z.shape[0] > 0
+    assert heightmap_z.shape[1] > 0
+    assert not np.all(np.isnan(heightmap_z))
     
     # Create visualization
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     
     # Plot 1: Heightmap as heatmap
-    x_coords = np.array(metadata['x_coords'])
-    y_coords = np.array(metadata['y_coords'])
     im1 = ax1.imshow(
-        heightmap.T,
+        heightmap_z.T,
         origin='lower',
         extent=[x_coords.min(), x_coords.max(), y_coords.min(), y_coords.max()],
         cmap='terrain',
@@ -143,7 +146,7 @@ def test_heightmap_visualization(tmp_path, monkeypatch) -> None:
     from mpl_toolkits.mplot3d import Axes3D
     ax2 = fig.add_subplot(122, projection='3d')
     X, Y = np.meshgrid(x_coords, y_coords, indexing='ij')
-    ax2.plot_surface(X, Y, heightmap, cmap='terrain', alpha=0.8, edgecolor='none')
+    ax2.plot_surface(X, Y, heightmap_z, cmap='terrain', alpha=0.8, edgecolor='none')
     ax2.set_xlabel('X (m)')
     ax2.set_ylabel('Y (m)')
     ax2.set_zlabel('Height (m)')
@@ -162,20 +165,20 @@ def test_heightmap_visualization(tmp_path, monkeypatch) -> None:
     # Verify heightmap values match expected slope
     # The terrain slopes from z=0 to z=5 as x goes from -5 to 5
     # So z should approximately equal (x + 5) / 2
-    valid_mask = ~np.isnan(heightmap)
+    valid_mask = ~np.isnan(heightmap_z)
     if np.any(valid_mask):
         # Check a few points along the x-axis
-        mid_y_idx = heightmap.shape[1] // 2
-        for i in range(heightmap.shape[0]):
-            if not np.isnan(heightmap[i, mid_y_idx]):
+        mid_y_idx = heightmap_z.shape[1] // 2
+        for i in range(heightmap_z.shape[0]):
+            if not np.isnan(heightmap_z[i, mid_y_idx]):
                 x_val = x_coords[i]
-                z_val = heightmap[i, mid_y_idx]
+                z_val = heightmap_z[i, mid_y_idx]
                 expected_z = (x_val + 5) / 2  # Linear slope from 0 to 5
                 # Allow some tolerance for raycasting discretization
                 assert abs(z_val - expected_z) < 0.5, f"At x={x_val:.2f}, expected z≈{expected_z:.2f}, got z={z_val:.2f}"
     
     print(f"\n✓ Heightmap visualization saved to: {output_file}")
-    print(f"  Shape: {heightmap.shape}")
-    print(f"  Z range: [{metadata['z_min']:.2f}, {metadata['z_max']:.2f}]")
-    print(f"  Valid cells: {np.count_nonzero(valid_mask)}/{heightmap.size}")
+    print(f"  Shape: {heightmap_z.shape}")
+    print(f"  Z range: [{metadata['heightmap_stats']['z_min']:.2f}, {metadata['heightmap_stats']['z_max']:.2f}]")
+    print(f"  Valid cells: {np.count_nonzero(valid_mask)}/{heightmap_z.size}")
     

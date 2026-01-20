@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 from typing import Sequence
 
@@ -84,7 +85,9 @@ def resolve_positions(
 def generate_heightmap(
     mesh_path: Path,
     resolution: float,
-) -> tuple[np.ndarray, dict]:
+) -> tuple[np.ndarray, dict]:    
+    start_time = time.perf_counter()
+    
     logger.info(f"Loading mesh from {mesh_path}")
     mesh = trimesh.load(mesh_path, force='mesh')
 
@@ -132,20 +135,58 @@ def generate_heightmap(
             if np.isnan(heightmap[i, j]) or z > heightmap[i, j]:
                 heightmap[i, j] = z
 
+    heightmap_3d = np.zeros((n_x, n_y, 3), dtype=np.float32)
+    for i in range(n_x):
+        for j in range(n_y):
+            heightmap_3d[i, j, 0] = x_coords[i]
+            heightmap_3d[i, j, 1] = y_coords[j]
+            heightmap_3d[i, j, 2] = heightmap[i, j]
+    
+    z_min = float(np.nanmin(heightmap)) if not np.all(np.isnan(heightmap)) else None
+    z_max = float(np.nanmax(heightmap)) if not np.all(np.isnan(heightmap)) else None
+    z_range = float(z_max - z_min) if z_min is not None and z_max is not None else None
+    
+    total_positions = n_x * n_y
+    valid_positions = int(np.count_nonzero(~np.isnan(heightmap)))
+    coverage_percent = round((valid_positions / total_positions) * 100, 2)
+    
+    file_size_bytes = int(heightmap_3d.nbytes)
+    file_size_kb = round(file_size_bytes / 1024, 2)
+    file_size_mb = round(file_size_kb / 1024, 4)
+    
+    elapsed_time = time.perf_counter() - start_time
+    
     metadata = {
-        'x_min': float(min_pt[0]),
-        'x_max': float(max_pt[0]),
-        'y_min': float(min_pt[1]),
-        'y_max': float(max_pt[1]),
-        'z_min': float(np.nanmin(heightmap)) if not np.all(np.isnan(heightmap)) else None,
-        'z_max': float(np.nanmax(heightmap)) if not np.all(np.isnan(heightmap)) else None,
-        'resolution': resolution,
-        'shape': list(heightmap.shape),
-        'x_coords': x_coords.tolist(),
-        'y_coords': y_coords.tolist(),
+        'resolution_m': resolution,
+        'computation_time_s': round(elapsed_time, 4),
+        'bounds': {
+            'x_min': float(min_pt[0]),
+            'x_max': float(max_pt[0]),
+            'y_min': float(min_pt[1]),
+            'y_max': float(max_pt[1]),
+        },
+        'grid_size': {
+            'n_x': int(n_x),
+            'n_y': int(n_y),
+            'total_positions': int(total_positions),
+        },
+        'heightmap_stats': {
+            'z_min': z_min,
+            'z_max': z_max,
+            'z_range': z_range,
+        },
+        'coverage': {
+            'valid_positions': valid_positions,
+            'coverage_percent': coverage_percent,
+        },
+        'memory': {
+            'bytes': file_size_bytes,
+            'kilobytes': file_size_kb,
+            'megabytes': file_size_mb,
+        },
     }
 
-    valid_cells = np.count_nonzero(~np.isnan(heightmap))
-    logger.info(f"Heightmap complete: {valid_cells}/{heightmap.size} cells have data")
+    logger.info(f"Heightmap complete: {valid_positions}/{total_positions} cells have data ({coverage_percent}%)")
+    logger.info(f"Computation time: {elapsed_time:.2f}s")
 
-    return heightmap, metadata
+    return heightmap_3d, metadata
