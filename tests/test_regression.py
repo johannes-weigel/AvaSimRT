@@ -86,3 +86,17 @@ class TestExampleRegression:
             reference_heightmap,
             err_msg="Generated heightmap differs from reference"
         )
+        
+
+    def test_03_preprocess_positions(self) -> None:
+        """
+        Test 03: Resolve positions for nodes and anchors.
+        
+        Generates: positions_resolved.json
+        """
+
+        config = EXAMPLE_DIR / "03-preprocess-positions.yml"
+        output_dir = run_avasimrt(config)
+        
+        assert_file_unchanged(output_dir, ASSETS_DIR, "positions_resolved.json")
+        

@@ -27,7 +27,10 @@ avasimrt --config examples/nordkette/config.yml
 
 The example includes several partial configuration files that can be used to test individual preprocessing stages of the simulator:
 
-| File                        | Target                                       | Output                                                                |
-| --------------------------- | -------------------------------------------- | --------------------------------------------------------------------- |
-| 01-preprocess-full.yml      | Tests the complete Blender export pipeline   | terrain mesh, materials, and scene data from the Blender file         |
-| 02-preprocess-heightmap.yml | Tests heightmap generation from terrain mesh | Generates a heightmap at specified resolution from the .obj mesh file |
+| File                        | Target                                          | Output                                                                                   |
+| --------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 01-preprocess-full.yml      | Tests the complete Blender export pipeline      | Outputs terrain mesh, materials, and scene data from the Blender file                    |
+| 02-preprocess-heightmap.yml | Tests heightmap generation from terrain mesh    | Generates a heightmap at specified resolution from the .obj mesh file                    |
+| 03-preprocess-positions.yml | Tests position resolution for nodes and anchors | Resolves z-coordinates for nodes and anchors on the terrain surface using the heightmap. |
+
+These configurations allow testing and debugging individual components of the preprocessing pipeline without running the full simulation.

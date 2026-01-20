@@ -34,18 +34,26 @@ def _raycast_z_at_position(
 
     return float(np.max(locations[:, 2]))
 
-def _resolve_position(mesh, x, y, z) -> float:
+def _resolve_position(mesh, x, y, z, z_offset) -> tuple[float, float | None]:
     "Returns final z"
 
     if (z is not None):
-        return z
+        return z, None
     
     z_terrain = _raycast_z_at_position(mesh, x, y)
     if z_terrain is None:
         raise ValueError(f"Could not resolve z at ({x}, {y}): no terrain intersection")
     
-    return z_terrain
+    if (z_offset is None):
+        return z_terrain, z_terrain
+    else:
+        return z_terrain + z_offset, z_terrain
 
+def _resolve_positions(mesh, positions: Sequence[PositionConfig]) -> list[ResolvedPosition]:
+    return [
+        ResolvedPosition.from_config(p, *_resolve_position(mesh, p.x, p.y, p.z, p.z_offset))
+        for p in positions
+    ]
 
 def resolve_positions(
     mesh_path: Path,
@@ -58,29 +66,7 @@ def resolve_positions(
     if not isinstance(mesh, trimesh.Trimesh):
         raise ValueError(f"Expected single mesh, got {type(mesh)}")
 
-    resolved_nodes = []
-    for node in nodes:
-        node_z_final = _resolve_position(mesh, node.x, node.y, node.z)
-        resolved_nodes.append(ResolvedPosition(
-            id="NODE",
-            x=node.x,
-            y=node.y,
-            z=node_z_final,
-            size=node.size,
-        ))
-
-    resolved_anchors = []
-    for anchor in anchors:
-        anchor_z_final = _resolve_position(mesh, anchor.x, anchor.y, anchor.z)
-        resolved_anchors.append(ResolvedPosition(
-            id=anchor.id,
-            x=anchor.x,
-            y=anchor.y,
-            z=anchor_z_final,
-            size=anchor.size,
-        ))
-
-    return resolved_nodes, resolved_anchors
+    return _resolve_positions(mesh, nodes), _resolve_positions(mesh, anchors)
 
 
 def generate_heightmap(

@@ -121,11 +121,11 @@ def prepare(*,
 
     positions_data = {
         "nodes": [
-            {"id": n.id, "x": n.x, "y": n.y, "z": n.z, "size": n.size}
+            {"id": n.id, "x": n.x, "y": n.y, "z": n.z, "z_terrain": n.z_terrain, "size": n.size}
             for n in resolved_nodes
         ],
         "anchors": [
-            {"id": a.id, "x": a.x, "y": a.y, "z": a.z, "size": a.size}
+            {"id": a.id, "x": a.x, "y": a.y, "z": a.z, "z_terrain": a.z_terrain, "size": a.size}
             for a in resolved_anchors
         ],
     }

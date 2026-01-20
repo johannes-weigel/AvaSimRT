@@ -2,3 +2,41 @@ obj: examples/nordkette/assets/scene.obj
 xml: examples/nordkette/assets/scene.xml
 heightmap:
   npy: examples/nordkette/assets/detailed_heightmap.npy
+nodes:
+  - id: "West"
+    x: -2000
+    y: 1000
+  - id: "North"
+    x: -1000
+    y: 280
+  - id: "North (free fall)"
+    x: -1000
+    y: 280
+    z_offset: 50
+  - id: "East"
+    x: -300
+    y: 1500
+anchors:
+  - id: "North"
+    x: -800
+    y: 1900
+    z: Null
+  - id: "North-West"
+    x: -1500
+    y: 1000
+    z: null
+  - id: "South-West"
+    x: -1500
+    y: -700
+    z:
+  - id: "South-East (fixed)"
+    x: -300
+    y: -900
+    z: 280
+  - id: "South-East"
+    x: -300
+    y: -900
+  - id: "East"
+    x: -200
+    y: 300
+    z_offset: 17

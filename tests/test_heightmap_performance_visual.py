@@ -25,7 +25,7 @@ from avasimrt.preprocessing.heights import generate_heightmap
 
 
 # EASY TO CHANGE: Define resolutions to test (in meters)
-RESOLUTIONS = [200, 100, 50, 10, 1]
+RESOLUTIONS = [200, 100, 50, 10, 5]
 
 
 def test_heightmap_performance_visualization(tmp_path: Path) -> None:

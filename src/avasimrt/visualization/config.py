@@ -14,6 +14,6 @@ class VisualizationConfig:
         d = dict(data or {})
 
         return cls(
-            interactive_plots=bool(d.get("interactive_plots", cls.interactive_plots)),
-            save_all_plots=bool(d.get("save_all_plots", cls.save_all_plots)),
+            interactive_plots=bool(d.get("interactive_plots", False)),
+            save_all_plots=bool(d.get("save_all_plots", False)),
         )

@@ -59,8 +59,8 @@ def _motion_results() -> list[Sample]:
 
 def _anchors_with_z() -> list[ResolvedPosition]:
     return [
-        ResolvedPosition(id="A-01", x=0.0, y=0.0, z=0.2, size=0.2),
-        ResolvedPosition(id="A-02", x=5.0, y=0.0, z=0.2, size=0.2),
+        ResolvedPosition(id="A-01", x=0.0, y=0.0, z=0.2, z_terrain=None, size=0.2),
+        ResolvedPosition(id="A-02", x=5.0, y=0.0, z=0.2, z_terrain=None, size=0.2),
     ]
 
 

@@ -28,7 +28,7 @@ def _cfg(*, sim_time: float = 2.01, sampling_rate: float = 1.0, time_step: float
 def test_simulate_motion_plane_collects_three_samples(tmp_path: Path) -> None:
     cfg = _cfg(sim_time=2.01, sampling_rate=1.0, time_step=0.01)
 
-    node = ResolvedPosition(id="NODE", x=0.0, y=0.0, z=1.0, size=0.1)
+    node = ResolvedPosition(id="NODE", x=0.0, y=0.0, z=1.0, z_terrain=None, size=0.1)
     
     scene_obj = tmp_path / "plane.obj"
     scene_obj.write_text("v -10 -10 0\nv 10 -10 0\nv 10 10 0\nv -10 10 0\nf 1 2 3\nf 1 3 4\n", encoding="utf-8")
@@ -64,7 +64,7 @@ def test_simulate_motion_single_sample(tmp_path: Path) -> None:
     """Test that a very short simulation produces at least one sample."""
     cfg = _cfg(sim_time=0.05, sampling_rate=0.05, time_step=0.01)
 
-    node = ResolvedPosition(id="NODE", x=0.0, y=0.0, z=1.0, size=0.1)
+    node = ResolvedPosition(id="NODE", x=0.0, y=0.0, z=1.0, z_terrain=None, size=0.1)
     
     scene_obj = tmp_path / "plane.obj"
     scene_obj.write_text("v -10 -10 0\nv 10 -10 0\nv 10 10 0\nv -10 10 0\nf 1 2 3\nf 1 3 4\n", encoding="utf-8")
