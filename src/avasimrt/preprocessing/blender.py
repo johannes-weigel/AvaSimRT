@@ -18,6 +18,46 @@ def _get_blender_export_script(
     return textwrap.dedent(f'''\
         import bpy
         import sys
+        import addon_utils
+
+        # Enable Mitsuba addon if XML export is requested
+        xml_output = {repr(str(xml_output)) if xml_output else 'None'}
+        if xml_output:
+            import os
+            from pathlib import Path
+
+            addon_module = "mitsuba_blender"
+
+            # Check if addon directory exists
+            blender_version = ".".join(bpy.app.version_string.split(".")[:2])
+            addon_paths = [
+                Path.home() / ".config" / "blender" / blender_version / "scripts" / "addons" / addon_module,
+                Path(bpy.utils.user_resource('SCRIPTS')) / "addons" / addon_module,
+            ]
+            addon_found = any(p.exists() for p in addon_paths)
+
+            if not addon_found:
+                print(f"ERROR: Mitsuba addon not found in any of these locations:", file=sys.stderr)
+                for p in addon_paths:
+                    print(f"  - {{p}}", file=sys.stderr)
+                print("Run 'make setup-blender' or 'bash scripts/setup_blender.sh' to install it.", file=sys.stderr)
+                sys.exit(2)
+
+            loaded_default, loaded_state = addon_utils.check(addon_module)
+            if not loaded_state:
+                try:
+                    addon_utils.enable(addon_module, default_set=False)
+                    print(f"Enabled addon: {{addon_module}}")
+                except Exception as e:
+                    print(f"ERROR: Failed to enable Mitsuba addon: {{e}}", file=sys.stderr)
+                    sys.exit(2)
+
+            # Verify the export operator is available
+            if not hasattr(bpy.ops.export_scene, 'mitsuba'):
+                print("ERROR: Mitsuba addon enabled but export operator not available.", file=sys.stderr)
+                print("This usually means the 'mitsuba' Python package is not installed.", file=sys.stderr)
+                print("Install it with: pip install mitsuba", file=sys.stderr)
+                sys.exit(2)
 
         # Get mesh objects only (excluding cameras, lights, empties, etc.)
         mesh_objects = [obj for obj in bpy.data.objects if obj.type == 'MESH']
@@ -64,16 +104,11 @@ def _get_blender_export_script(
             )
             print("PLY export complete")
 
-        # Export Mitsuba XML
-        xml_output = {repr(str(xml_output)) if xml_output else 'None'}
+        # Export Mitsuba XML (xml_output already defined at top of script)
         if xml_output:
             print(f"Exporting Mitsuba XML to: {{xml_output}}")
-            try:
-                bpy.ops.export_scene.mitsuba(filepath=xml_output)
-                print("Mitsuba XML export complete")
-            except AttributeError:
-                print("ERROR: Mitsuba addon not available. Install mitsuba-blender addon.", file=sys.stderr)
-                sys.exit(2)
+            bpy.ops.export_scene.mitsuba(filepath=xml_output)
+            print("Mitsuba XML export complete")
 
         print("All exports complete")
     ''')
@@ -139,7 +174,7 @@ def run_blender_export(
             ) from e
 
         if result.returncode != 0:
-            error_msg = result.stderr or result.stdout
+            error_msg = result.stderr + "\n" + result.stdout if result.stderr else result.stdout
             if result.returncode == 2:
                 raise RuntimeError(
                     f"Mitsuba addon not installed in Blender. "

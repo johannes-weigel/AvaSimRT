@@ -30,8 +30,8 @@ def test_generate_script_without_errors() -> None:
 
 def test_resolve_cmd_from_env() -> None:
     actual = _resolve_blender_cmd(None)
-    if (not actual.endswith("/blender-4.2.15-linux-x64/blender")):
-        pytest.skip("Contains hardcoded information from uncommitted .env file, allowed to fail.")
+    if (not actual.find("4.2.15") and not actual.endswith("/blender")):
+        pytest.skip("Contains information from uncommitted .env file, allowed to fail if changed explizit.")
 
 
 def test_resolve_cmd_explicit_override() -> None:

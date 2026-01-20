@@ -33,5 +33,5 @@ clean:
 
 clean-blender:
 	rm -rf $(HOME)/.local/blender-4.2.15
-	rm -rf $(HOME)/.config/blender/4.2/extensions/user_default/mitsuba-blender
+	rm -rf $(HOME)/.config/blender/4.2/scripts/addons/mitsuba-blender
 	@echo "✅ Blender installation cleaned"
