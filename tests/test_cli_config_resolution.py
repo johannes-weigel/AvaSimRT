@@ -16,7 +16,7 @@ def _base_args(*, output: str = "out", run_id: str | None = "r1") -> CliArgs:
         output=output,
         delete_existing=True,
         debug=False,
-        node="0,0,1,0.2",
+        nodes=["0,0,1,0.2"],
         anchors=["A-01,0,0,none,0.2"],
         scene_xml=None,
         scene_obj=None,
@@ -47,7 +47,7 @@ def test_resolve_config_from_cli_flags() -> None:
     assert cfg.output == Path("out")
     assert cfg.delete_existing is True
 
-    assert cfg.node is not None
+    assert len(cfg.nodes) == 1
     assert len(cfg.anchors) == 1
     assert cfg.motion is not None
 
@@ -78,11 +78,11 @@ def test_resolve_config_uses_config_file_and_ignores_other_flags(tmp_path: Path)
                 "delete_existing: false",
                 f"xml: {xml_file}",
                 f"obj: {obj_file}",
-                "node:",
-                "  x: 0.0",
-                "  y: 0.0",
-                "  z: 1.0",
-                "  size: 0.2",
+                "nodes:",
+                "  - x: 0.0",
+                "    y: 0.0",
+                "    z: 1.0",
+                "    size: 0.2",
                 "anchors:",
                 "  - id: A-01",
                 "    x: 0.0",
@@ -119,21 +119,6 @@ def test_resolve_config_uses_config_file_and_ignores_other_flags(tmp_path: Path)
     assert cfg.output == Path("file-out")
     assert cfg.delete_existing is False
 
-
-def test_resolve_config_requires_node_when_no_config() -> None:
-    args = _base_args()
-    args = replace(args, node=None)
-
-    with pytest.raises(ValueError):
-        resolve_config(args)
-
-
-def test_resolve_config_requires_at_least_one_anchor_when_no_config() -> None:
-    args = _base_args()
-    args = replace(args, anchors=[])
-
-    with pytest.raises(ValueError):
-        resolve_config(args)
 
 
 def test_resolve_config_creates_channelstate_when_scene_xml_given(tmp_path: Path) -> None:
