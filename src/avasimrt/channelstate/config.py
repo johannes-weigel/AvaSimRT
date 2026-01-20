@@ -79,7 +79,7 @@ class ChannelStateConfig:
 
         channel = ChannelConfig.from_dict(d.get("channel"))
         render = RenderConfig.from_dict(d.get("render"))
-        debug = coerce_bool(d.get("debug", cls.debug))
+        debug = coerce_bool(d.get("debug", False))
 
         return cls(
             channel=channel,

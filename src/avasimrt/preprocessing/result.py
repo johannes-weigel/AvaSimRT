@@ -15,7 +15,7 @@ class ResolvedPosition:
     size: float
 
 class PreprocessorResult(NamedTuple):
-    node: ResolvedPosition
+    nodes: Sequence[ResolvedPosition]
     anchors: Sequence[ResolvedPosition]
     heightmap: np.ndarray
     out_dir: Path

@@ -25,7 +25,7 @@ def prepare(*,
             scene_obj: Path | None = None,
             scene_xml: Path | None = None,
             blender_cmd: str | None = None,
-            node: NodeConfig,
+            nodes: Sequence[NodeConfig],
             anchors: Sequence[AnchorConfig],
             heightmap: np.ndarray | None = None,) -> PreprocessorResult:
     # Validate input
@@ -75,7 +75,7 @@ def prepare(*,
     if heightmap is None:
         logger.info("Generating heightmap from scene geometry")
         try:
-            heightmap, heightmap_metadata = generate_heightmap(final_obj, 0.1)
+            heightmap, heightmap_metadata = generate_heightmap(final_obj, 10)
         except Exception as e:
             raise RuntimeError(
                 f"Failed to generate heightmap from '{final_obj}': {e}"
@@ -100,7 +100,7 @@ def prepare(*,
     # NODE & ANCHORS
     logger.info("Resolving node and anchor positions")
     try:
-        resolved_node, resolved_anchors = resolve_positions(final_obj, node, anchors)
+        resolved_nodes, resolved_anchors = resolve_positions(final_obj, nodes, anchors)
     except Exception as e:
         raise RuntimeError(
             f"Failed to resolve positions from scene '{final_obj}': {e}"
@@ -108,7 +108,7 @@ def prepare(*,
     
     return PreprocessorResult(
         run_id=final_run_id,
-        node=resolved_node,
+        nodes=resolved_nodes,
         anchors=resolved_anchors,
         heightmap=heightmap,
         out_dir=out_dir,

@@ -23,6 +23,6 @@ class ReportingConfig:
         d = dict(data or {})
 
         return cls(
-            enabled=coerce_bool(d.get("enabled", cls.enabled)),
-            csv=coerce_bool(d.get("csv", cls.csv)),
+            enabled=coerce_bool(d.get("enabled", True)),
+            csv=coerce_bool(d.get("csv", True)),
         )

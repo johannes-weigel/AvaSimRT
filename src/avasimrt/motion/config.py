@@ -27,9 +27,9 @@ class MotionTime:
     def from_dict(cls, data: Mapping[str, Any] | None) -> "MotionTime":
         d = dict(data or {})
         return cls(
-            sim_time=coerce_float(d.get("sim_time", cls.sim_time)),
-            sampling_rate=coerce_float(d.get("sampling_rate", cls.sampling_rate)),
-            time_step=coerce_float(d.get("time_step", cls.time_step)),
+            sim_time=coerce_float(d.get("sim_time", 60.0)),
+            sampling_rate=coerce_float(d.get("sampling_rate", 1.0)),
+            time_step=coerce_float(d.get("time_step", 1.0 / 240.0)),
         )
 
 
@@ -42,7 +42,7 @@ class MotionPhysics:
     def from_dict(cls, data: Mapping[str, Any] | None) -> "MotionPhysics":
         d = dict(data or {})
         return cls(
-            gravity_z=coerce_float(d.get("gravity_z", cls.gravity_z)),
+            gravity_z=coerce_float(d.get("gravity_z", -9.81)),
         )
 
 
@@ -112,7 +112,7 @@ class MotionConfig:
     def from_dict(cls, data: Mapping[str, Any]) -> "MotionConfig":
         m = dict(data or {})
 
-        time = MotionTime.from_dict(m.get("time"))
+        time = MotionTime.from_dict(m.get("time") or {})
         physics = MotionPhysics.from_dict(m.get("physics"))
         debug = MotionDebug.from_dict(m.get("debug"))
         terrain = TerrainDynamics.from_dict(m.get("terrain"))

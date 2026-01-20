@@ -48,22 +48,31 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
             scene_obj=config.scene_obj,
             scene_xml=config.scene_xml,
             blender_cmd=blender_cmd,
-            node=config.node,
+            nodes=config.nodes,
             anchors=config.anchors,
         )
     
         out_dir = preprocessing_result.out_dir
         run_id = preprocessing_result.run_id
-        node = preprocessing_result.node
+        nodes = preprocessing_result.nodes
         anchors = preprocessing_result.anchors
         scene_obj = preprocessing_result.scene_obj
         scene_xml = preprocessing_result.scene_xml
+
+        if len(nodes) == 0:
+            return SimResult(
+                successful=True,
+                message="Gracefully aborted after preprocessing: no node configured",
+                run_id=run_id,
+                output_dir=out_dir,
+            )
+
 
         # 1) MOTION (PyBullet)
         with log_step("MOTION"):
             motion_results = simulate_motion(
                 cfg=config.motion,
-                node=node,
+                node=nodes[0],
                 scene_obj=scene_obj
             )
 

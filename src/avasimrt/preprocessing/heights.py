@@ -49,24 +49,25 @@ def _resolve_position(mesh, x, y, z) -> float:
 
 def resolve_positions(
     mesh_path: Path,
-    node: NodeConfig,
+    nodes: Sequence[NodeConfig],
     anchors: Sequence[AnchorConfig],
-) -> tuple[ResolvedPosition, list[ResolvedPosition]]:
+) -> tuple[list[ResolvedPosition], list[ResolvedPosition]]:
     logger.info(f"Loading mesh for z-resolution: {mesh_path}")
     mesh = trimesh.load(mesh_path, force='mesh')
 
     if not isinstance(mesh, trimesh.Trimesh):
         raise ValueError(f"Expected single mesh, got {type(mesh)}")
 
-    node_z_final = _resolve_position(mesh, node.x, node.y, node.z)
-
-    resolved_node = ResolvedPosition(
-        id="NODE",
-        x=node.x,
-        y=node.y,
-        z=node_z_final,
-        size=node.size,
-    )
+    resolved_nodes = []
+    for node in nodes:
+        node_z_final = _resolve_position(mesh, node.x, node.y, node.z)
+        resolved_nodes.append(ResolvedPosition(
+            id="NODE",
+            x=node.x,
+            y=node.y,
+            z=node_z_final,
+            size=node.size,
+        ))
 
     resolved_anchors = []
     for anchor in anchors:
@@ -79,7 +80,7 @@ def resolve_positions(
             size=anchor.size,
         ))
 
-    return resolved_node, resolved_anchors
+    return resolved_nodes, resolved_anchors
 
 
 def generate_heightmap(

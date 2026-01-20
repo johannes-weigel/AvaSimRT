@@ -21,7 +21,7 @@ class CliArgs:
 
     debug: bool
 
-    node: str | None
+    nodes: list[str]
     anchors: list[str]
     scene_xml: str | None
     scene_obj: str | None
@@ -91,7 +91,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p.add_argument("--debug", action="store_true", help="Enable debug logging and slow visual modes where applicable.")
 
-    p.add_argument("--node", type=str, help="Node as 'x,y,z[,size]'. Use z=none to auto-place on terrain.")
+    p.add_argument(
+        "--node",
+        dest="nodes",
+        action="append",
+        default=[],
+        help="Node as 'x,y,z[,size]'. Use z=none to resolve via motion.",
+    )
+
     p.add_argument(
         "--anchor",
         dest="anchors",
@@ -137,7 +144,7 @@ def parse_args(argv: list[str] | None = None) -> CliArgs:
         output=ns.output,
         delete_existing=ns.delete_existing,
         debug=ns.debug,
-        node=ns.node,
+        nodes=list(ns.nodes),
         anchors=list(ns.anchors),
         scene_xml=ns.scene_xml,
         scene_obj=ns.scene_obj,
@@ -164,12 +171,7 @@ def resolve_config(args: CliArgs) -> SimConfig:
     if args.config:
         return SimConfig.from_yaml(args.config)
 
-    if args.node is None:
-        raise ValueError("--node is required if --config is not set")
-    if not args.anchors:
-        raise ValueError("at least one --anchor is required if --config is not set")
-
-    node = _parse_node(args.node)
+    nodes = [_parse_node(n) for n in args.nodes]
     anchors = [_parse_anchor(a) for a in args.anchors]
 
     motion = MotionConfig(
@@ -230,7 +232,7 @@ def resolve_config(args: CliArgs) -> SimConfig:
         output=Path(args.output),
         delete_existing=args.delete_existing,
         debug=args.debug,
-        node=node,
+        nodes=nodes,
         anchors=anchors,
         motion=motion,
         channelstate=channelstate,
@@ -256,6 +258,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print("Run completed successfully.")
+    if (result.message is not None):
+        print(result.message)
     print(f"Run ID: {result.run_id}")
     if result.output_dir is not None:
         print(f"Output directory: {result.output_dir}")

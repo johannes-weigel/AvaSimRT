@@ -76,7 +76,7 @@ class SimConfig:
     delete_existing: bool = False
 
     # Shared
-    node: NodeConfig = NodeConfig()
+    nodes: list[NodeConfig] = field(default_factory=list)
     anchors: list[AnchorConfig] = field(default_factory=list)
 
     # Steps
@@ -113,9 +113,12 @@ class SimConfig:
 
             output = Path(d.get("output", "output")),
             delete_existing=coerce_bool(d.get("delete_existing", False)),
-            debug=coerce_bool(d["debug"]) if "debug" in d else cls.debug,
+            debug=coerce_bool(d.get("debug", False)),
 
-            node=NodeConfig.from_dict(get_dict(d, "node", "node") or {}),
+            nodes=[
+                NodeConfig.from_dict(a)
+                for a in get_list(d, "nodes", "nodes")
+            ],
             anchors=[
                 AnchorConfig.from_dict(a)
                 for a in get_list(d, "anchors", "anchors")
