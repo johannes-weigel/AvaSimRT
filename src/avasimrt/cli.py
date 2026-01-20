@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .app import run
-from .config import AnchorConfig, NodeConfig, SimConfig, VisualizationConfig, ReportingConfig
+from .config import PositionConfig, SimConfig, VisualizationConfig, ReportingConfig
 
 from .channelstate.config import ChannelStateConfig, ChannelConfig, RenderConfig
 from .motion.config import MotionConfig, MotionDebug, MotionPhysics, MotionTime
@@ -53,29 +53,17 @@ class CliArgs:
     no_csv: bool
 
 
-def _parse_node(s: str) -> NodeConfig:
-    # "x,y,z[,size]" where z may be "none"
-    parts = [p.strip() for p in s.split(",")]
-    if len(parts) not in (3, 4):
-        raise ValueError("node must be 'x,y,z[,size]'")
-    x = float(parts[0])
-    y = float(parts[1])
-    z = None if parts[2].lower() in ("none", "null") else float(parts[2])
-    size = float(parts[3]) if len(parts) == 4 else 0.2
-    return NodeConfig(x=x, y=y, z=z, size=size)
-
-
-def _parse_anchor(s: str) -> AnchorConfig:
+def _parse_position(s: str) -> PositionConfig:
     # "id,x,y,z[,size]" where z may be "none"
     parts = [p.strip() for p in s.split(",")]
     if len(parts) not in (4, 5):
-        raise ValueError("anchor must be 'id,x,y,z[,size]'")
+        raise ValueError("position must be 'id,x,y,z[,size]'")
     a_id = parts[0]
     x = float(parts[1])
     y = float(parts[2])
     z = None if parts[3].lower() in ("none", "null") else float(parts[3])
     size = float(parts[4]) if len(parts) == 5 else 0.2
-    return AnchorConfig(id=a_id, x=x, y=y, z=z, size=size)
+    return PositionConfig(id=a_id, x=x, y=y, z=z, size=size)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -100,7 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="nodes",
         action="append",
         default=[],
-        help="Node as 'x,y,z[,size]'. Use z=none to resolve via motion.",
+        help="Node as 'id,x,y,z[,size]'. Use z=none to resolve via motion.",
     )
 
     p.add_argument(
@@ -191,8 +179,8 @@ def resolve_config(args: CliArgs) -> SimConfig:
     if args.config:
         return SimConfig.from_yaml(args.config)
 
-    nodes = [_parse_node(n) for n in args.nodes]
-    anchors = [_parse_anchor(a) for a in args.anchors]
+    nodes = [_parse_position(n) for n in args.nodes]
+    anchors = [_parse_position(a) for a in args.anchors]
 
     motion = MotionConfig(
         time=MotionTime(sim_time=args.sim_time, sampling_rate=args.sampling_rate, time_step=args.time_step),

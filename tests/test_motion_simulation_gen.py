@@ -7,7 +7,6 @@ from typing import Sequence
 
 import pytest
 
-from avasimrt.config import AnchorConfig, NodeConfig
 from avasimrt.motion.config import (
     MotionConfig,
     MotionDebug,

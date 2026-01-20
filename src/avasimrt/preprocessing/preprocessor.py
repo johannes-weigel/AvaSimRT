@@ -8,7 +8,7 @@ from typing import Sequence
 import numpy as np
 import json
 
-from avasimrt.config import AnchorConfig, NodeConfig
+from avasimrt.config import PositionConfig
 from .output import prepare_output
 from .blender import run_blender_export
 from .heights import generate_heightmap, resolve_positions
@@ -25,8 +25,8 @@ def prepare(*,
             scene_obj: Path | None = None,
             scene_xml: Path | None = None,
             blender_cmd: str | None = None,
-            nodes: Sequence[NodeConfig],
-            anchors: Sequence[AnchorConfig],
+            nodes: Sequence[PositionConfig],
+            anchors: Sequence[PositionConfig],
             heightmap_npy: Path | None = None,
             heightmap_resolution: float | None = None,) -> PreprocessorResult:
     # Validate input

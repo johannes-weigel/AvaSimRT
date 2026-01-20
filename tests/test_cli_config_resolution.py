@@ -16,7 +16,7 @@ def _base_args(*, output: str = "out", run_id: str | None = "r1") -> CliArgs:
         output=output,
         delete_existing=True,
         debug=False,
-        nodes=["0,0,1,0.2"],
+        nodes=["Node-1,0,0,1,0.2"],
         anchors=["A-01,0,0,none,0.2"],
         scene_xml=None,
         scene_obj=None,
@@ -35,6 +35,8 @@ def _base_args(*, output: str = "out", run_id: str | None = "r1") -> CliArgs:
         interactive_plots=False,
         save_all_plots=False,
         no_csv=False,
+        heightmap_npy=None,
+        heightmap_resolution=None
     )
 
 
@@ -79,7 +81,8 @@ def test_resolve_config_uses_config_file_and_ignores_other_flags(tmp_path: Path)
                 f"xml: {xml_file}",
                 f"obj: {obj_file}",
                 "nodes:",
-                "  - x: 0.0",
+                "  - id: N-1",
+                "    x: 0.0",
                 "    y: 0.0",
                 "    z: 1.0",
                 "    size: 0.2",

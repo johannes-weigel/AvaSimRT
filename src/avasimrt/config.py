@@ -13,45 +13,23 @@ from .helpers import (
     coerce_bool, coerce_float, 
     get_dict, get_list)
 
-
 @dataclass(frozen=True, slots=True)
-class NodeConfig:
-    x: float = 0.0
-    y: float = 0.0
-    z: float | None = None
-    size: float = 0.2
-
-    def __post_init__(self) -> None:
-        if self.size <= 0:
-            raise ValueError(f"node.size must be > 0, got {self.size!r}")
-
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any] | None) -> "NodeConfig":
-        d = dict(data or {})
-
-        return cls(
-            x=coerce_float(d.get("x", cls.x)),
-            y=coerce_float(d.get("y", cls.y)),
-            z=coerce_float(d["z"]) if d.get("z") is not None else None,
-            size=coerce_float(d.get("size", cls.size)),
-        )
-
-@dataclass(frozen=True, slots=True)
-class AnchorConfig:
+class PositionConfig:
     id: str
     x: float
     y: float
     z: float | None = None
+    z_offset: float | None = None
     size: float = 0.2
 
     def __post_init__(self) -> None:
         if not self.id:
-            raise ValueError("anchor.id must not be empty")
+            raise ValueError("position.id must not be empty")
         if self.size <= 0:
-            raise ValueError(f"anchor.size must be > 0, got {self.size!r}")
+            raise ValueError(f"position.size must be > 0, got {self.size!r}")
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "AnchorConfig":
+    def from_dict(cls, data: Mapping[str, Any]) -> "PositionConfig":
         d = dict(data)
 
         return cls(
@@ -59,7 +37,8 @@ class AnchorConfig:
             x=coerce_float(d["x"]),
             y=coerce_float(d["y"]),
             z=coerce_float(d["z"]) if d.get("z") is not None else None,
-            size=coerce_float(d.get("size", cls.size)),
+            z_offset=coerce_float(d["z_offset"]) if d.get("z_offset") is not None else None,
+            size=coerce_float(d.get("size", 0.2)),
         )
 
 
@@ -79,8 +58,8 @@ class SimConfig:
     heightmap_resolution: float | None = None
 
     # Shared
-    nodes: list[NodeConfig] = field(default_factory=list)
-    anchors: list[AnchorConfig] = field(default_factory=list)
+    nodes: list[PositionConfig] = field(default_factory=list)
+    anchors: list[PositionConfig] = field(default_factory=list)
 
     # Steps
     motion: MotionConfig = MotionConfig()
@@ -126,11 +105,11 @@ class SimConfig:
             heightmap_resolution=heightmap_resolution,
 
             nodes=[
-                NodeConfig.from_dict(a)
+                PositionConfig.from_dict(a)
                 for a in get_list(d, "nodes", "nodes")
             ],
             anchors=[
-                AnchorConfig.from_dict(a)
+                PositionConfig.from_dict(a)
                 for a in get_list(d, "anchors", "anchors")
             ],
 

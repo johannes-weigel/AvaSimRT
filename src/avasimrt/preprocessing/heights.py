@@ -8,7 +8,7 @@ from typing import Sequence
 import numpy as np
 import trimesh
 
-from avasimrt.config import AnchorConfig, NodeConfig
+from avasimrt.config import PositionConfig
 from .result import ResolvedPosition
 
 logger = logging.getLogger(__name__)
@@ -49,8 +49,8 @@ def _resolve_position(mesh, x, y, z) -> float:
 
 def resolve_positions(
     mesh_path: Path,
-    nodes: Sequence[NodeConfig],
-    anchors: Sequence[AnchorConfig],
+    nodes: Sequence[PositionConfig],
+    anchors: Sequence[PositionConfig],
 ) -> tuple[list[ResolvedPosition], list[ResolvedPosition]]:
     logger.info(f"Loading mesh for z-resolution: {mesh_path}")
     mesh = trimesh.load(mesh_path, force='mesh')

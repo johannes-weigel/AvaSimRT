@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from avasimrt.config import AnchorConfig
+from avasimrt.preprocessing.result import ResolvedPosition
 from avasimrt.channelstate.config import (
     ChannelStateConfig,
     ChannelConfig,
@@ -57,10 +57,10 @@ def _motion_results() -> list[Sample]:
     ]
 
 
-def _anchors_with_z() -> list[AnchorConfig]:
+def _anchors_with_z() -> list[ResolvedPosition]:
     return [
-        AnchorConfig(id="A-01", x=0.0, y=0.0, z=0.2, size=0.2),
-        AnchorConfig(id="A-02", x=5.0, y=0.0, z=0.2, size=0.2),
+        ResolvedPosition(id="A-01", x=0.0, y=0.0, z=0.2, size=0.2),
+        ResolvedPosition(id="A-02", x=5.0, y=0.0, z=0.2, size=0.2),
     ]
 
 
@@ -165,19 +165,4 @@ def test_estimate_channelstate_calls_render_on_schedule(tmp_path: Path, monkeypa
     assert out[0].image is not None
     assert out[1].image is None
     assert out[2].image is not None
-
-
-
-def test_estimate_channelstate_requires_anchor_z(tmp_path: Path) -> None:
-    cfg = _cfg(tmp_path)
-    motion = _motion_results()
-    
-    scene_xml = tmp_path / "scene.xml"
-    scene_xml.write_text("<scene/>", encoding="utf-8")
-    out_dir = tmp_path / "frames"
-
-    anchors = [AnchorConfig(id="A-01", x=0.0, y=0.0, z=None, size=0.2)]
-
-    with pytest.raises(ValueError):
-        cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion, scene_xml=scene_xml, out_dir=out_dir)
 
