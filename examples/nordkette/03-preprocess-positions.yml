@@ -1,0 +1,4 @@
+obj: examples/nordkette/assets/scene.obj
+xml: examples/nordkette/assets/scene.xml
+heightmap:
+  npy: examples/nordkette/assets/detailed_heightmap.npy

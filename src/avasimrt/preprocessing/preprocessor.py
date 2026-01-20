@@ -27,7 +27,7 @@ def prepare(*,
             blender_cmd: str | None = None,
             nodes: Sequence[NodeConfig],
             anchors: Sequence[AnchorConfig],
-            heightmap: np.ndarray | None = None,
+            heightmap_npy: Path | None = None,
             heightmap_resolution: float | None = None,) -> PreprocessorResult:
     # Validate input
     has_blender = scene_blender is not None
@@ -73,6 +73,16 @@ def prepare(*,
     
 
     # HEIGHT MAP
+    heightmap = None
+    if heightmap_npy is not None:
+        logger.info(f"Loading heightmap from: {heightmap_npy}")
+        try:
+            heightmap = np.load(heightmap_npy)
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load heightmap from '{heightmap_npy}': {e}"
+            ) from e
+    
     if heightmap is None:
         logger.info("Generating heightmap from scene geometry")
         try:
@@ -89,6 +99,8 @@ def prepare(*,
             raise OSError(
                 f"Failed to save heightmap metadata to '{out_dir}': {e}"
             ) from e
+    else:
+        logger.info("Using provided heightmap (not generating new one)")
     
     try:
         np.save(out_dir / "heightmap.npy", heightmap)

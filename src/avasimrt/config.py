@@ -75,6 +75,7 @@ class SimConfig:
     output: Path | None = None
     delete_existing: bool = False
 
+    heightmap_npy: Path | None = None
     heightmap_resolution: float | None = None
 
     # Shared
@@ -109,6 +110,7 @@ class SimConfig:
 
         heightmap_dict = get_dict(d, "heightmap", "heightmap") or {}
         heightmap_resolution = coerce_float(heightmap_dict["resolution"]) if "resolution" in heightmap_dict else None
+        heightmap_npy = Path(heightmap_dict["npy"]) if "npy" in heightmap_dict else None
 
         return cls(
             run_id=d.get("run_id"),
@@ -120,6 +122,7 @@ class SimConfig:
             delete_existing=coerce_bool(d.get("delete_existing", False)),
             debug=coerce_bool(d.get("debug", False)),
 
+            heightmap_npy=heightmap_npy,
             heightmap_resolution=heightmap_resolution,
 
             nodes=[

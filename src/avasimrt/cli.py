@@ -29,6 +29,7 @@ class CliArgs:
     scene_blender: str | None
     blender_cmd: str | None
 
+    heightmap_npy: str | None
     heightmap_resolution: float | None
 
     # motion
@@ -125,6 +126,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Heightmap resolution in meters (default: 0.5).",
     )
+    
+    p.add_argument(
+        "--heightmap-npy",
+        type=str,
+        default=None,
+        help="Path to existing heightmap .npy file to use instead of generating one.",
+    )
 
     p.add_argument("--sim-time", type=float, default=60.0)
     p.add_argument("--sampling-rate", type=float, default=1.0)
@@ -160,6 +168,7 @@ def parse_args(argv: list[str] | None = None) -> CliArgs:
         scene_obj=ns.scene_obj,
         scene_blender=ns.scene_blender,
         blender_cmd=ns.blender_cmd,
+        heightmap_npy=ns.heightmap_npy,
         heightmap_resolution=ns.heightmap_resolution,
         sim_time=ns.sim_time,
         sampling_rate=ns.sampling_rate,
@@ -240,6 +249,7 @@ def resolve_config(args: CliArgs) -> SimConfig:
         scene_xml=scene_xml,
         scene_obj=scene_obj,
         scene_blender=scene_blender,
+        heightmap_npy=Path(args.heightmap_npy) if args.heightmap_npy else None,
         heightmap_resolution=args.heightmap_resolution,
         output=Path(args.output),
         delete_existing=args.delete_existing,

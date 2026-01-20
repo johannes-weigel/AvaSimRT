@@ -50,6 +50,7 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
             blender_cmd=blender_cmd,
             nodes=config.nodes,
             anchors=config.anchors,
+            heightmap_npy=config.heightmap_npy,
             heightmap_resolution=config.heightmap_resolution,
         )
     
