@@ -38,6 +38,8 @@ avasimrt --help
 
 Example configurations and demo runs are provided in the `examples/` directory.
 
+For a complete walkthrough using real alpine terrain data, see the [Nordkette example](examples/nordkette/README.md).
+
 ## Development
 
 For local development, it is recommended to use the editable install:

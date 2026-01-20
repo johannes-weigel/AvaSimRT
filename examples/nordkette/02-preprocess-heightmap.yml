@@ -1,4 +1,4 @@
 obj: examples/nordkette/assets/scene.obj
 xml: examples/nordkette/assets/scene.xml
 heightmap:
-  resolution: 1
+  resolution: 4
