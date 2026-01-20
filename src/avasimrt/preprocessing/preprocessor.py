@@ -27,7 +27,8 @@ def prepare(*,
             blender_cmd: str | None = None,
             nodes: Sequence[NodeConfig],
             anchors: Sequence[AnchorConfig],
-            heightmap: np.ndarray | None = None,) -> PreprocessorResult:
+            heightmap: np.ndarray | None = None,
+            heightmap_resolution: float | None = None,) -> PreprocessorResult:
     # Validate input
     has_blender = scene_blender is not None
     has_obj_xml = scene_obj is not None and scene_xml is not None
@@ -75,7 +76,7 @@ def prepare(*,
     if heightmap is None:
         logger.info("Generating heightmap from scene geometry")
         try:
-            heightmap, heightmap_metadata = generate_heightmap(final_obj, 10)
+            heightmap, heightmap_metadata = generate_heightmap(final_obj, heightmap_resolution)
         except Exception as e:
             raise RuntimeError(
                 f"Failed to generate heightmap from '{final_obj}': {e}"

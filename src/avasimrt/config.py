@@ -75,6 +75,8 @@ class SimConfig:
     output: Path | None = None
     delete_existing: bool = False
 
+    heightmap_resolution: float | None = None
+
     # Shared
     nodes: list[NodeConfig] = field(default_factory=list)
     anchors: list[AnchorConfig] = field(default_factory=list)
@@ -105,6 +107,9 @@ class SimConfig:
     def from_dict(cls, data: Mapping[str, Any]) -> "SimConfig":
         d = dict(data or {})
 
+        heightmap_dict = get_dict(d, "heightmap", "heightmap") or {}
+        heightmap_resolution = coerce_float(heightmap_dict["resolution"]) if "resolution" in heightmap_dict else None
+
         return cls(
             run_id=d.get("run_id"),
             scene_xml = Path(d["xml"]) if d.get("xml") is not None else None,
@@ -114,6 +119,8 @@ class SimConfig:
             output = Path(d.get("output", "output")),
             delete_existing=coerce_bool(d.get("delete_existing", False)),
             debug=coerce_bool(d.get("debug", False)),
+
+            heightmap_resolution=heightmap_resolution,
 
             nodes=[
                 NodeConfig.from_dict(a)

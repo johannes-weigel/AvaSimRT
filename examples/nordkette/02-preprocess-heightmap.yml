@@ -1,0 +1,4 @@
+obj: examples/nordkette/assets/scene_generated.obj
+xml: examples/nordkette/assets/scene_generated.xml
+heightmap:
+  resolution: 0.5

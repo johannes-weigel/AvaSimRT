@@ -50,6 +50,7 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
             blender_cmd=blender_cmd,
             nodes=config.nodes,
             anchors=config.anchors,
+            heightmap_resolution=config.heightmap_resolution,
         )
     
         out_dir = preprocessing_result.out_dir

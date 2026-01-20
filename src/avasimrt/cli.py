@@ -28,6 +28,8 @@ class CliArgs:
     scene_blender: str | None
     blender_cmd: str | None
 
+    heightmap_resolution: float | None
+
     # motion
     sim_time: float
     sampling_rate: float
@@ -116,6 +118,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Blender executable name or path. Can also be set via AVASIMRT_BLENDER_CMD environment variable. Default: 'blender'"
     )
 
+    p.add_argument(
+        "--heightmap-resolution",
+        type=float,
+        default=None,
+        help="Heightmap resolution in meters (default: 0.5).",
+    )
+
     p.add_argument("--sim-time", type=float, default=60.0)
     p.add_argument("--sampling-rate", type=float, default=1.0)
     p.add_argument("--time-step", type=float, default=1.0 / 240.0)
@@ -150,6 +159,7 @@ def parse_args(argv: list[str] | None = None) -> CliArgs:
         scene_obj=ns.scene_obj,
         scene_blender=ns.scene_blender,
         blender_cmd=ns.blender_cmd,
+        heightmap_resolution=ns.heightmap_resolution,
         sim_time=ns.sim_time,
         sampling_rate=ns.sampling_rate,
         time_step=ns.time_step,
@@ -229,6 +239,7 @@ def resolve_config(args: CliArgs) -> SimConfig:
         scene_xml=scene_xml,
         scene_obj=scene_obj,
         scene_blender=scene_blender,
+        heightmap_resolution=args.heightmap_resolution,
         output=Path(args.output),
         delete_existing=args.delete_existing,
         debug=args.debug,

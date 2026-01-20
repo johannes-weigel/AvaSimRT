@@ -85,8 +85,10 @@ def resolve_positions(
 
 def generate_heightmap(
     mesh_path: Path,
-    resolution: float,
-) -> tuple[np.ndarray, dict]:    
+    resolution: float | None = None,
+) -> tuple[np.ndarray, dict]:
+    if resolution is None:
+        resolution = 0.5    
     start_time = time.perf_counter()
     
     logger.info(f"Loading mesh from {mesh_path}")
