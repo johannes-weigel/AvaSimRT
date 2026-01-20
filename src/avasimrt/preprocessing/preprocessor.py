@@ -118,7 +118,26 @@ def prepare(*,
         raise RuntimeError(
             f"Failed to resolve positions from scene '{final_obj}': {e}"
         ) from e
-    
+
+    positions_data = {
+        "nodes": [
+            {"id": n.id, "x": n.x, "y": n.y, "z": n.z, "size": n.size}
+            for n in resolved_nodes
+        ],
+        "anchors": [
+            {"id": a.id, "x": a.x, "y": a.y, "z": a.z, "size": a.size}
+            for a in resolved_anchors
+        ],
+    }
+    try:
+        with open(out_dir / "positions_resolved.json", 'w', encoding='utf-8') as f:
+            json.dump(positions_data, f, indent=2)
+            f.write('\n')
+    except OSError as e:
+        raise OSError(
+            f"Failed to save resolved positions to '{out_dir}': {e}"
+        ) from e
+
     return PreprocessorResult(
         run_id=final_run_id,
         nodes=resolved_nodes,
