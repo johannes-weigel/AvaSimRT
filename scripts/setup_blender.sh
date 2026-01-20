@@ -2,9 +2,9 @@
 set -e
 
 # Blender + Mitsuba Setup Script for AvaSimRT
-# This script downloads and sets up Blender 4.2.15 with Mitsuba plugin
+# This script downloads and sets up Blender 4.2.17 with Mitsuba plugin
 
-BLENDER_VERSION="4.2.15"
+BLENDER_VERSION="4.2.17"
 BLENDER_DIR="${HOME}/.local/blender-${BLENDER_VERSION}"
 MITSUBA_PLUGIN_URL="https://github.com/mitsuba-renderer/mitsuba-blender/archive/refs/heads/master.zip"
 
@@ -94,7 +94,7 @@ fi
 # Install mitsuba Python package in Blender's Python environment
 echo ""
 echo "📦 Installing mitsuba Python package in Blender..."
-# Blender uses major.minor version for internal paths (e.g., 4.2, not 4.2.15)
+# Blender uses major.minor version for internal paths (e.g., 4.2, not 4.2.17)
 BLENDER_INTERNAL_VERSION="${BLENDER_VERSION%.*}"
 BLENDER_PYTHON="${BLENDER_DIR}/${BLENDER_INTERNAL_VERSION}/python/bin/python3.11"
 

@@ -1,6 +1,6 @@
 # Blender Setup for AvaSimRT
 
-This project requires Blender 4.2.15 with the Mitsuba plugin for scene export.
+This project requires Blender 4.2.17 with the Mitsuba plugin for scene export.
 
 ## Quick Setup
 
@@ -12,7 +12,7 @@ This will:
 
 - Set up Python virtual environment
 - Install project dependencies
-- Download and install Blender 4.2.15
+- Download and install Blender 4.2.17
 - Install Mitsuba Blender plugin
 - Create/update `.env` with Blender path
 
@@ -20,7 +20,7 @@ This will:
 
 If you prefer to install Blender manually:
 
-1. Download Blender 4.2.15 from https://www.blender.org/download/lts/4-2/
+1. Download Blender 4.2.17 from https://www.blender.org/download/lts/4-2/
 2. Install Mitsuba plugin from https://github.com/mitsuba-renderer/mitsuba-blender
 3. Create `.env` file with:
    ```
