@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import argparse
 import sys
 from dataclasses import dataclass
@@ -256,6 +257,7 @@ def resolve_config(args: CliArgs) -> SimConfig:
 
 
 def main(argv: list[str] | None = None) -> int:
+
     try:
         args = parse_args(argv)
         config = resolve_config(args)
@@ -268,10 +270,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {result.message}", file=sys.stderr)
         return 1
 
-    print("Run completed successfully.")
-    if (result.message is not None):
-        print(result.message)
-    print(f"Run ID: {result.run_id}")
     if result.output_dir is not None:
-        print(f"Output directory: {result.output_dir}")
+        result_file = result.output_dir / "result.json"
+        try:
+            with open(result_file, 'w') as f:
+                json.dump({
+                    "success": result.successful,
+                    "run_id": result.run_id,
+                    "output_dir": str(result.output_dir),
+                    "message": result.message,
+                    "created_at_utc": result.created_at_utc.isoformat(),
+                }, f, indent=2)
+        except Exception as e:
+            print(f"WARNING: Could not save result.json: {e}", file=sys.stderr)
+    
+    if result.output_dir is not None:
+        print(result.output_dir)
+    
     return 0
