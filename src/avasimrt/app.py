@@ -11,6 +11,7 @@ from .result import SimResult
 from .preprocessing.preprocessor import prepare
 from .motion.simulation import simulate_motion
 from .motion.cache import load_all_trajectories, save_all_trajectories
+from .motion.visualization import save_all_trajectory_visualizations
 from .channelstate.simulation import estimate_channelstate
 from .reporting.csv import export_simresult_to_csv
 from .visualization.interactive import interactive_visualization_shell
@@ -95,6 +96,17 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
                 run_id=run_id,
                 output_dir=out_dir,
             )
+
+        if config.trajectory_plots_png or config.trajectory_plots_html:
+            with log_step("TRAJECTORY VISUALIZATION"):
+                save_all_trajectory_visualizations(
+                    motion_results,
+                    out_dir / "trajectory_plots",
+                    png=config.trajectory_plots_png,
+                    html=config.trajectory_plots_html,
+                    terrain_obj_path=scene_obj,
+                    anchors=anchors,
+                )
 
         # 2) CHANNELSTATE (Sionna RT)
         if config.channelstate is None:

@@ -57,9 +57,11 @@ class SimConfig:
     heightmap_npy: Path | None = None
     heightmap_resolution: float | None = None
 
-    # Trajectory caching
-    trajectory_cache_dir: Path | None = None
-    trajectory_save: bool = True
+    # Trajectory caching and visualization
+    trajectory_cache_dir: Path | None = None  # Load from this dir instead of simulating
+    trajectory_save: bool = True  # Save trajectories after simulation
+    trajectory_plots_png: bool = True  # Save PNG visualizations
+    trajectory_plots_html: bool = True  # Save interactive HTML visualizations
 
     # Shared
     nodes: list[PositionConfig] = field(default_factory=list)
@@ -112,6 +114,8 @@ class SimConfig:
 
             trajectory_cache_dir=Path(trajectory_dict["cache_dir"]) if trajectory_dict.get("cache_dir") else None,
             trajectory_save=coerce_bool(trajectory_dict.get("save", True)),
+            trajectory_plots_png=coerce_bool(trajectory_dict.get("plots_png", True)),
+            trajectory_plots_html=coerce_bool(trajectory_dict.get("plots_html", True)),
 
             nodes=[
                 PositionConfig.from_dict(a)

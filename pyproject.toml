@@ -27,6 +27,7 @@ dependencies = [
   "trimesh==4.9.0",
   "PyYAML",
   "python-dotenv",
+  "Plotly",
 ]
 
 classifiers = [
