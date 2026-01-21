@@ -4,13 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-@dataclass(frozen=True, slots=True)
-class NodeSnapshot:
-    """Positional and velocity information of a simulated node at a given time."""
-    position: tuple[float, float, float]
-    orientation: tuple[float, float, float, float]
-    linear_velocity: tuple[float, float, float]
-
+from avasimrt.motion.result import NodeSnapshot
 
 @dataclass(frozen=True, slots=True)
 class ComplexReading:

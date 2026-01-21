@@ -10,6 +10,7 @@ from .result import SimResult
 
 from .preprocessing.preprocessor import prepare
 from .motion.simulation import simulate_motion
+from .motion.cache import load_all_trajectories, save_all_trajectories
 from .channelstate.simulation import estimate_channelstate
 from .reporting.csv import export_simresult_to_csv
 from .visualization.interactive import interactive_visualization_shell
@@ -71,15 +72,23 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
 
 
         # 1) MOTION (PyBullet)
-        with log_step("MOTION"):
-            motion_results = simulate_motion(
-                cfg=config.motion,
-                nodes=nodes,
-                scene_obj=scene_obj
-            )
+        if config.trajectory_cache_dir is not None:
+            with log_step("MOTION (from cache)"):
+                motion_results = load_all_trajectories(config.trajectory_cache_dir)
+        else:
+            with log_step("MOTION"):
+                motion_results = simulate_motion(
+                    cfg=config.motion,
+                    nodes=nodes,
+                    scene_obj=scene_obj
+                )
+                if config.trajectory_save:
+                    trajectory_dir = out_dir / "trajectories"
+                    save_all_trajectories(motion_results, trajectory_dir)
+
         motion_results_first = next(iter(motion_results.values()), None)
 
-        if (motion_results_first is None):
+        if motion_results_first is None:
             return SimResult(
                 successful=True,
                 message="Gracefully aborted after motion: no node result",

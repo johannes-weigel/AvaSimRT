@@ -57,6 +57,10 @@ class SimConfig:
     heightmap_npy: Path | None = None
     heightmap_resolution: float | None = None
 
+    # Trajectory caching
+    trajectory_cache_dir: Path | None = None
+    trajectory_save: bool = True
+
     # Shared
     nodes: list[PositionConfig] = field(default_factory=list)
     anchors: list[PositionConfig] = field(default_factory=list)
@@ -91,6 +95,8 @@ class SimConfig:
         heightmap_resolution = coerce_float(heightmap_dict["resolution"]) if "resolution" in heightmap_dict else None
         heightmap_npy = Path(heightmap_dict["npy"]) if "npy" in heightmap_dict else None
 
+        trajectory_dict = get_dict(d, "trajectory", "trajectory") or {}
+
         return cls(
             run_id=d.get("run_id"),
             scene_xml = Path(d["xml"]) if d.get("xml") is not None else None,
@@ -103,6 +109,9 @@ class SimConfig:
 
             heightmap_npy=heightmap_npy,
             heightmap_resolution=heightmap_resolution,
+
+            trajectory_cache_dir=Path(trajectory_dict["cache_dir"]) if trajectory_dict.get("cache_dir") else None,
+            trajectory_save=coerce_bool(trajectory_dict.get("save", True)),
 
             nodes=[
                 PositionConfig.from_dict(a)
