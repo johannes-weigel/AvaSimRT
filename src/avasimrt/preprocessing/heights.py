@@ -34,7 +34,7 @@ def _raycast_z_at_position(
 
     return float(np.max(locations[:, 2]))
 
-def _resolve_position(mesh, x, y, z, z_offset) -> tuple[float, float | None]:
+def _resolve_position(mesh, x, y, z, z_offset, size) -> tuple[float, float | None]:
     "Returns final z"
 
     if (z is not None):
@@ -45,13 +45,13 @@ def _resolve_position(mesh, x, y, z, z_offset) -> tuple[float, float | None]:
         raise ValueError(f"Could not resolve z at ({x}, {y}): no terrain intersection")
     
     if (z_offset is None):
-        return z_terrain, z_terrain
+        return z_terrain + size, z_terrain
     else:
-        return z_terrain + z_offset, z_terrain
+        return z_terrain + size + z_offset, z_terrain
 
 def _resolve_positions(mesh, positions: Sequence[PositionConfig]) -> list[ResolvedPosition]:
     return [
-        ResolvedPosition.from_config(p, *_resolve_position(mesh, p.x, p.y, p.z, p.z_offset))
+        ResolvedPosition.from_config(p, *_resolve_position(mesh, p.x, p.y, p.z, p.z_offset, p.size))
         for p in positions
     ]
 
