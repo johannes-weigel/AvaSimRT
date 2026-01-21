@@ -5,7 +5,8 @@ from pathlib import Path
 
 import numpy as np
 
-from avasimrt.result import NodeSnapshot, Sample
+from avasimrt.motion.result import NodeSnapshot
+from avasimrt.result import Sample
 
 logger = logging.getLogger(__name__)
 

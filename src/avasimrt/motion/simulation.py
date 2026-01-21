@@ -30,6 +30,8 @@ def _connect(p, cfg: MotionConfig) -> int:
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, cfg.physics.gravity_z)
     p.setTimeStep(cfg.time.time_step)
+    p.setPhysicsEngineParameter(numSolverIterations=50)
+    p.setPhysicsEngineParameter(numSubSteps=4)
     return cid
 
 
@@ -117,6 +119,8 @@ def spawn_node(
         basePosition=[node_cfg.x, node_cfg.y, node_cfg.z],
     )
     _apply_node_dynamics(p, node_id, cfg)
+    p.changeDynamics(node_id, -1, ccdSweptSphereRadius=node_cfg.size * 0.9)
+    p.changeDynamics(node_id, -1, activationState=p.ACTIVATION_STATE_DISABLE_SLEEPING)
     return node_id
 
 
@@ -209,6 +213,7 @@ def simulate_motion(
     """
     if scene_obj is None:
         raise ValueError("scene_obj is None")
+    
 
     logger.info("Motion: sim_time=%.2fs, dt=%.4fs, nodes=%d", cfg.time.sim_time, cfg.time.time_step, len(nodes))
 

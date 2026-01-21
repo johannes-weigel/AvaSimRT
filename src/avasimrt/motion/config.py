@@ -9,8 +9,8 @@ from avasimrt.helpers import coerce_float, coerce_all_floats
 @dataclass(frozen=True, slots=True)
 class MotionTime:
     """Time settings for the motion simulation."""
-    sim_time: float = 60.0
-    sampling_rate: float = 1.0
+    sim_time: float = 120.0
+    sampling_rate: float = 0.5
     time_step: float = 1.0 / 240.0
 
     def __post_init__(self) -> None:
@@ -50,7 +50,7 @@ class MotionPhysics:
 class MotionDebug:
     """Debug/preview settings (GUI, camera)."""
     mode: Literal["DIRECT", "GUI"] = "DIRECT"
-    camera_distance: float = 6.0
+    camera_distance: float = 100.0
     camera_yaw: float = 0.0
     camera_pitch: float = -30.0
 
@@ -73,11 +73,11 @@ class MotionDebug:
 @dataclass(frozen=True, slots=True)
 class TerrainDynamics:
     restitution: float = 0.0
-    lateral_friction: float = 1.6
-    rolling_friction: float = 0.03
-    spinning_friction: float = 0.02
-    contact_damping: float = 0.1
-    contact_stiffness: float = 3000.0
+    lateral_friction: float = 0.1
+    rolling_friction: float = 0.001
+    spinning_friction: float = 0.001
+    contact_damping: float = 500.0
+    contact_stiffness: float = 30000.0
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any] | None) -> "TerrainDynamics":
@@ -87,13 +87,13 @@ class TerrainDynamics:
 @dataclass(frozen=True, slots=True)
 class NodeDynamics:
     restitution: float = 0.0
-    lateral_friction: float = 0.2
-    rolling_friction: float = 0.04
-    spinning_friction: float = 0.03
-    linear_damping: float = 0.01
-    angular_damping: float = 0.01
-    contact_damping: float = 0.05
-    contact_stiffness: float = 5000.0
+    lateral_friction: float = 0.05
+    rolling_friction: float = 0.001
+    spinning_friction: float = 0.001
+    linear_damping: float = 0.001
+    angular_damping: float = 0.001
+    contact_damping: float = 500.0
+    contact_stiffness: float = 30000.0
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any] | None) -> "NodeDynamics":
