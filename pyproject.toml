@@ -28,6 +28,7 @@ dependencies = [
   "PyYAML",
   "python-dotenv",
   "Plotly",
+  "shapely",
 ]
 
 classifiers = [
