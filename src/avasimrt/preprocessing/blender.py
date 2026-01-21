@@ -107,7 +107,11 @@ def _get_blender_export_script(
         # Export Mitsuba XML (xml_output already defined at top of script)
         if xml_output:
             print(f"Exporting Mitsuba XML to: {{xml_output}}")
-            bpy.ops.export_scene.mitsuba(filepath=xml_output)
+            bpy.ops.export_scene.mitsuba(
+                filepath=xml_output,
+                axis_forward='Y',
+                axis_up='Z',
+            )
             print("Mitsuba XML export complete")
 
         print("All exports complete")
