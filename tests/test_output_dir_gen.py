@@ -16,8 +16,10 @@ def test_run_returns_output_dir_as_path(tmp_path, monkeypatch) -> None:
     scene_obj.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n", encoding="utf-8")
     scene_xml = tmp_path / "scene.xml"
     scene_xml.write_text("<scene/>", encoding="utf-8")
+    scene_meshes = tmp_path / "meshes"
+    scene_meshes.mkdir(parents=True, exist_ok=True)
 
-    cfg = SimConfig(run_id="run-1", output=Path("output"), delete_existing=False, scene_xml=scene_xml, scene_obj=scene_obj)
+    cfg = SimConfig(run_id="run-1", output=Path("output"), delete_existing=False, scene_xml=scene_xml, scene_obj=scene_obj, scene_meshes=scene_meshes)
     result = run(cfg)
 
     assert result.successful is True
@@ -41,12 +43,14 @@ def test_run_fails_if_output_dir_not_empty_and_no_delete(tmp_path, monkeypatch) 
     scene_obj.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n", encoding="utf-8")
     scene_xml = tmp_path / "scene.xml"
     scene_xml.write_text("<scene/>", encoding="utf-8")
+    scene_meshes = tmp_path / "meshes"
+    scene_meshes.mkdir(parents=True, exist_ok=True)
 
     run_dir = tmp_path / "output" / "run-2"
     run_dir.mkdir(parents=True)
     (run_dir / "existing.txt").write_text("data", encoding="utf-8")
 
-    cfg = SimConfig(run_id="run-2", output=Path("output"), delete_existing=False, scene_xml=scene_xml, scene_obj=scene_obj)
+    cfg = SimConfig(run_id="run-2", output=Path("output"), delete_existing=False, scene_xml=scene_xml, scene_obj=scene_obj, scene_meshes=scene_meshes)
     result = run(cfg)
 
     assert result.successful is False
@@ -66,12 +70,14 @@ def test_run_deletes_existing_output_dir_if_flag_set(tmp_path, monkeypatch) -> N
     scene_obj.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n", encoding="utf-8")
     scene_xml = tmp_path / "scene.xml"
     scene_xml.write_text("<scene/>", encoding="utf-8")
+    scene_meshes = tmp_path / "meshes"
+    scene_meshes.mkdir(parents=True, exist_ok=True)
 
     run_dir = tmp_path / "output" / "run-3"
     run_dir.mkdir(parents=True)
     (run_dir / "old.txt").write_text("old", encoding="utf-8")
 
-    cfg = SimConfig(run_id="run-3", output=Path("output"), delete_existing=True, scene_xml=scene_xml, scene_obj=scene_obj)
+    cfg = SimConfig(run_id="run-3", output=Path("output"), delete_existing=True, scene_xml=scene_xml, scene_obj=scene_obj, scene_meshes=scene_meshes)
     result = run(cfg)
 
     assert result.successful is True
@@ -83,8 +89,7 @@ def test_run_deletes_existing_output_dir_if_flag_set(tmp_path, monkeypatch) -> N
 
     entries = list(out.iterdir())
 
-    # expect 5 files: heightmap.npy, heightmap_meta.json, scene.obj, scene.xml, resolved_positions.json
-    assert len(entries) == 5
+    assert len(entries) == 6
 
 
 def test_heightmap_visualization(tmp_path, monkeypatch) -> None:

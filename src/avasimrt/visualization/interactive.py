@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 
 from avasimrt.result import AnchorReading, Sample
 
@@ -60,17 +61,17 @@ def handle_visualization_command(samples: list[Sample], command: str) -> None:
 def interactive_visualization_shell(samples: list[Sample]) -> None:
     """CLI loop for interactive visualization."""
     
-    print("\nInteractive visualization:")
-    print("  @           -> overview (mean_db + distance over time)")
-    print("  <id>@<step> -> anchor <id> at step index <step>")
-    print("  <id>@       -> anchor-over-time view")
-    print("  q / quit    -> exit\n")
+    print("\nInteractive visualization:", file=sys.stderr)
+    print("  @           -> overview (mean_db + distance over time)", file=sys.stderr)
+    print("  <id>@<step> -> anchor <id> at step index <step>", file=sys.stderr)
+    print("  <id>@       -> anchor-over-time view", file=sys.stderr)
+    print("  q / quit    -> exit\n", file=sys.stderr)
 
     while True:
         try:
             cmd = input("vis> ").strip()
         except EOFError:
-            print()
+            print(file=sys.stderr)
             break
 
         if cmd.lower() in {"q", "quit", "exit"}:
@@ -83,4 +84,4 @@ def interactive_visualization_shell(samples: list[Sample]) -> None:
             handle_visualization_command(samples, cmd)
         except Exception as e:
             logger.exception("Error while handling visualization command %r", cmd)
-            print(f"Error: {e}")
+            print(f"Error: {e}", file=sys.stderr)

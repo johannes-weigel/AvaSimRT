@@ -9,7 +9,8 @@ from typing import Sequence
 import pybullet_data
 
 from avasimrt.preprocessing.result import ResolvedPosition
-from avasimrt.result import NodeSnapshot, Sample
+from avasimrt.motion.result import NodeSnapshot
+from avasimrt.result import Sample
 from avasimrt.motion.config import MotionConfig
 
 logger = logging.getLogger(__name__)
@@ -183,6 +184,7 @@ def _simulate_single_node(
                             position=pos,
                             orientation=orn,
                             linear_velocity=lin_vel,
+                            size=node_cfg.size,
                         ),
                     )
                 )

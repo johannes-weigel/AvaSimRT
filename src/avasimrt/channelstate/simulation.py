@@ -190,50 +190,61 @@ def estimate_channelstate(
     *,
     cfg: ChannelStateConfig,
     anchors: Sequence[ResolvedPosition],
-    motion_results: Sequence[Sample],
+    trajectories: dict[str, list[Sample]],
     out_dir: Path,
     scene_xml: Path
-) -> list[Sample]:
+) -> dict[str, list[Sample]]:
     """
-    Computes channel state (CFR-derived readings) for each motion result time step.
+    Computes channel state (CFR-derived readings) for each trajectory.
     Returns new Result objects with readings and optional image paths.
+    
+    Returns:
+        Dictionary mapping node_id to list of samples with channel state readings
     """
-    if not motion_results:
-        logger.warning("ChannelState: no motion results to process")
-        return []
-
-    rx_radius = 0.2
-    try:
-        rx_radius = 0.2
-    except Exception:
-        pass
+    if not trajectories:
+        logger.warning("ChannelState: no trajectories to process")
+        return {}
 
     if any(a.z is None for a in anchors):
         missing = [a.id for a in anchors if a.z is None]
         raise ValueError(f"Anchors must have resolved z before channelstate: {missing}")
 
-    ctx = _build_context(cfg, anchors, rx_radius=rx_radius, scene_xml=scene_xml)
+    all_results: dict[str, list[Sample]] = {}
+    
+    for node_id, motion_results in trajectories.items():
+        if not motion_results:
+            logger.warning("ChannelState: node '%s' has no motion results, skipping", node_id)
+            continue
+            
+        rx_radius = motion_results[0].node.size
+        
+        logger.info("ChannelState: processing trajectory for node '%s' (rx_radius=%.3f)", node_id, rx_radius)
+        
+        ctx = _build_context(cfg, anchors, rx_radius=rx_radius, scene_xml=scene_xml)
 
-    total = len(motion_results)
-    log_every = max(1, total // 20)
-    out: list[Sample] = []
+        total = len(motion_results)
+        log_every = max(1, total // 20)
+        out: list[Sample] = []
 
-    logger.info("ChannelState: starting for %d time steps", total)
+        logger.info("ChannelState: starting for node '%s' with %d time steps", node_id, total)
 
-    for idx, r0 in enumerate(motion_results):
-        pos = r0.node.position
-        node_pos = mi.Point3f(float(pos[0]), float(pos[1]), float(pos[2]))
-        ctx.rx.position = node_pos
+        for idx, r0 in enumerate(motion_results):
+            pos = r0.node.position
+            node_pos = mi.Point3f(float(pos[0]), float(pos[1]), float(pos[2]))
+            ctx.rx.position = node_pos
 
-        paths = _solve_paths(ctx, cfg)
-        img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths, out_dir=out_dir)
+            paths = _solve_paths(ctx, cfg)
+            img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths, out_dir=out_dir / node_id)
 
-        readings = _evaluate_cfr(paths=paths, cfg=cfg, anchors=anchors, node_snapshot=r0.node)
-        out.append(Sample(timestamp=r0.timestamp, node=r0.node, readings=readings, image=img))
+            readings = _evaluate_cfr(paths=paths, cfg=cfg, anchors=anchors, node_snapshot=r0.node)
+            out.append(Sample(timestamp=r0.timestamp, node=r0.node, readings=readings, image=img))
 
-        if idx % log_every == 0:
-            percent = int(idx * 100 / max(1, total))
-            logger.info("ChannelState progress: %3d%% (%d/%d)", percent, idx, total)
+            if idx % log_every == 0:
+                percent = int(idx * 100 / max(1, total))
+                logger.info("ChannelState [%s] progress: %3d%% (%d/%d)", node_id, percent, idx, total)
 
-    logger.info("ChannelState finished: %d evaluated time steps", len(out))
-    return out
+        logger.info("ChannelState finished for node '%s': %d evaluated time steps", node_id, len(out))
+        all_results[node_id] = out
+
+    logger.info("ChannelState completed for %d trajectories", len(all_results))
+    return all_results

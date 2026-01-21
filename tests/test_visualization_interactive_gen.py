@@ -21,6 +21,7 @@ def _make_samples() -> list[Sample]:
         position=(0.0, 0.0, 0.0),
         orientation=(0.0, 0.0, 0.0, 1.0),
         linear_velocity=(0.0, 0.0, 0.0),
+        size=0.2,
     )
     freqs = [ComplexReading(freq=1.0, real=1.0, imag=0.0)]
     ant = AntennaReading(label="A", mean_db=-10.0, frequencies=freqs)

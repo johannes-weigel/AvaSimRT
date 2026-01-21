@@ -106,9 +106,6 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
                     anchors=anchors,
                 )
 
-        first_trajectory = next(iter(trajectories.values()), None)
-        assert first_trajectory is not None
-
         # 2) CHANNELSTATE (Sionna RT)
         if config.channelstate is None:
             return SimResult(
@@ -119,32 +116,38 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
             )
         
         with log_step("CHANNELSTATE"):
-            results = estimate_channelstate(
+            all_results = estimate_channelstate(
                 cfg=config.channelstate,
                 anchors=anchors,
-                motion_results=first_trajectory,
+                trajectories=trajectories,
                 scene_xml=scene_xml,
                 out_dir=out_dir
             )
 
         # 3) REPORTING (CSV export)
-        csv_path: Path | None = None
+        csv_paths: list[Path] = []
         if config.reporting.enabled and config.reporting.csv:
             with log_step("REPORTING"):
-                csv_path = out_dir / "results.csv"
-                export_simresult_to_csv(results, csv_path)
+                for node_id, results in all_results.items():
+                    csv_path = out_dir / f"results_{node_id}.csv"
+                    export_simresult_to_csv(results, csv_path)
+                    csv_paths.append(csv_path)
 
         # 4) VISUALIZATION (optional)
         if config.visualization.save_all_plots:
             with log_step("VISUALIZATION_SAVE_ALL"):
-                save_all_visualizations(results, out_dir)
+                for node_id, results in all_results.items():
+                    save_all_visualizations(results, out_dir / f"visualizations_{node_id}")
         if config.visualization.interactive_plots:
-            with log_step("VISUALIZATION_INTERACTIVE"):
-                interactive_visualization_shell(results)
+            
+            first_results = next(iter(all_results.values()), [])
+            if first_results:
+                with log_step("VISUALIZATION_INTERACTIVE"):
+                    interactive_visualization_shell(first_results)
 
         msg = "run completed"
-        if csv_path is not None:
-            msg += f" (csv: {csv_path})"
+        if csv_paths:
+            msg += f" (csv: {len(csv_paths)} files)"
 
         return SimResult(
             successful=True,

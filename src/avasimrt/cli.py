@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import argparse
+import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -254,11 +255,25 @@ def resolve_config(args: CliArgs) -> SimConfig:
     )
 
 
+def _setup_logging(debug: bool = False) -> None:
+    level = logging.DEBUG if debug else logging.INFO
+    
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        stream=sys.stderr,
+        force=True, 
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
 
     try:
         args = parse_args(argv)
         config = resolve_config(args)
+        
+        _setup_logging(debug=config.debug)
+        
         result = run(config, blender_cmd=args.blender_cmd)
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)

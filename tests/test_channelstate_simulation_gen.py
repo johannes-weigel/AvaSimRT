@@ -51,9 +51,9 @@ def _cfg(tmp_path: Path, *, render_enabled: bool = False, every_n: int = 0) -> C
 
 def _motion_results() -> list[Sample]:
     return [
-        Sample(timestamp=0.0, node=NodeSnapshot(position=(0.0, 0.0, 1.0), orientation=(1, 0, 0, 0), linear_velocity=(0, 0, 0))),
-        Sample(timestamp=1.0, node=NodeSnapshot(position=(1.0, 0.0, 1.0), orientation=(1, 0, 0, 0), linear_velocity=(0, 0, 0))),
-        Sample(timestamp=2.0, node=NodeSnapshot(position=(2.0, 0.0, 1.0), orientation=(1, 0, 0, 0), linear_velocity=(0, 0, 0))),
+        Sample(timestamp=0.0, node=NodeSnapshot(position=(0.0, 0.0, 1.0), orientation=(1, 0, 0, 0), linear_velocity=(0, 0, 0), size=0.2)),
+        Sample(timestamp=1.0, node=NodeSnapshot(position=(1.0, 0.0, 1.0), orientation=(1, 0, 0, 0), linear_velocity=(0, 0, 0), size=0.2)),
+        Sample(timestamp=2.0, node=NodeSnapshot(position=(2.0, 0.0, 1.0), orientation=(1, 0, 0, 0), linear_velocity=(0, 0, 0), size=0.2)),
     ]
 
 
@@ -85,9 +85,9 @@ def test_estimate_channelstate_empty_motion_results_returns_empty(tmp_path: Path
 
     monkeypatch.setattr(cs, "_build_context", fake_build_context)
 
-    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=[], scene_xml=scene_xml, out_dir=out_dir)
+    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, trajectories={}, scene_xml=scene_xml, out_dir=out_dir)
 
-    assert out == []
+    assert out == {}
     assert called["build"] == 0
 
 
@@ -116,8 +116,11 @@ def test_estimate_channelstate_preserves_timestamps_and_sets_rx_position(tmp_pat
     monkeypatch.setattr(cs, "_evaluate_cfr", fake_eval)
     monkeypatch.setattr(cs, "_render_if_enabled", lambda **kwargs: None)
 
-    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion, scene_xml=scene_xml, out_dir=out_dir)
+    result_dict = cs.estimate_channelstate(cfg=cfg, anchors=anchors, trajectories={"NODE": motion}, scene_xml=scene_xml, out_dir=out_dir)
 
+    assert len(result_dict) == 1
+    assert "NODE" in result_dict
+    out = result_dict["NODE"]
     assert len(out) == 3
     assert [r.timestamp for r in out] == [0.0, 1.0, 2.0]
     assert all(r.readings == fake_readings for r in out)
@@ -158,8 +161,11 @@ def test_estimate_channelstate_calls_render_on_schedule(tmp_path: Path, monkeypa
 
     monkeypatch.setattr(cs, "_render_if_enabled", fake_render_if_enabled)
 
-    out = cs.estimate_channelstate(cfg=cfg, anchors=anchors, motion_results=motion, scene_xml=scene_xml, out_dir=out_dir)
+    result_dict = cs.estimate_channelstate(cfg=cfg, anchors=anchors, trajectories={"NODE": motion}, scene_xml=scene_xml, out_dir=out_dir)
 
+    assert len(result_dict) == 1
+    assert "NODE" in result_dict
+    out = result_dict["NODE"]
     assert len(out) == 3
     assert rendered_steps == [0, 2]
     assert out[0].image is not None

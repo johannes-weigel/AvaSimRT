@@ -48,6 +48,7 @@ def test_export_simresult_to_csv_writes_header_plus_3_rows(tmp_path: Path) -> No
         position=(1.0, 2.0, 3.0),
         orientation=(1.0, 0.0, 0.0, 0.0),
         linear_velocity=(0.1, 0.2, 0.3),
+        size=0.2,
     )
 
     readings = [

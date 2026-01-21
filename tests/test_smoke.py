@@ -11,8 +11,10 @@ def test_smoke_run_returns_result(tmp_path: Path) -> None:
     scene_obj.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n", encoding="utf-8")
     scene_xml = tmp_path / "scene.xml"
     scene_xml.write_text("<scene/>", encoding="utf-8")
+    scene_meshes = tmp_path / "meshes"
+    scene_meshes.mkdir(parents=True, exist_ok=True)
     
-    cfg = SimConfig(scene_xml=scene_xml, scene_obj=scene_obj)
+    cfg = SimConfig(scene_xml=scene_xml, scene_obj=scene_obj, scene_meshes=scene_meshes)
     res = run(cfg)
 
     assert res.successful is True

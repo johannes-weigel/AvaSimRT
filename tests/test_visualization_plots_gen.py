@@ -24,6 +24,7 @@ def _make_sample(t: float, anchor_id: str, distance: float, mean_db: float) -> S
         position=(0.0, 0.0, 0.0),
         orientation=(0.0, 0.0, 0.0, 1.0),
         linear_velocity=(0.0, 0.0, 0.0),
+        size=0.2,
     )
 
     freqs = [

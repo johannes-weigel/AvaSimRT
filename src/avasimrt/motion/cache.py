@@ -18,6 +18,7 @@ def save_trajectory(node_id: str, samples: list[Sample], out_dir: Path) -> Path:
         - positions: (N, 3) float64
         - orientations: (N, 4) float64
         - linear_velocities: (N, 3) float64
+        - sizes: (N,) float64
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{node_id}.npz"
@@ -27,12 +28,14 @@ def save_trajectory(node_id: str, samples: list[Sample], out_dir: Path) -> Path:
     positions = np.empty((n, 3), dtype=np.float64)
     orientations = np.empty((n, 4), dtype=np.float64)
     linear_velocities = np.empty((n, 3), dtype=np.float64)
+    sizes = np.empty(n, dtype=np.float64)
 
     for i, s in enumerate(samples):
         timestamps[i] = s.timestamp
         positions[i] = s.node.position
         orientations[i] = s.node.orientation
         linear_velocities[i] = s.node.linear_velocity
+        sizes[i] = s.node.size
 
     np.savez_compressed(
         out_path,
@@ -40,6 +43,7 @@ def save_trajectory(node_id: str, samples: list[Sample], out_dir: Path) -> Path:
         positions=positions,
         orientations=orientations,
         linear_velocities=linear_velocities,
+        sizes=sizes,
     )
 
     logger.info("Saved trajectory for '%s' (%d samples) to %s", node_id, n, out_path)
@@ -62,6 +66,7 @@ def load_trajectory(path: Path) -> list[Sample]:
     positions = data["positions"]
     orientations = data["orientations"]
     linear_velocities = data["linear_velocities"]
+    sizes = data["sizes"]
 
     samples: list[Sample] = []
     for i in range(len(timestamps)):
@@ -72,6 +77,7 @@ def load_trajectory(path: Path) -> list[Sample]:
                     position=tuple(positions[i]),
                     orientation=tuple(orientations[i]),
                     linear_velocity=tuple(linear_velocities[i]),
+                    size=float(sizes[i]),
                 ),
             )
         )

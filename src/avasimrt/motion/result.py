@@ -9,3 +9,4 @@ class NodeSnapshot:
     position: tuple[float, float, float]
     orientation: tuple[float, float, float, float]
     linear_velocity: tuple[float, float, float]
+    size: float
