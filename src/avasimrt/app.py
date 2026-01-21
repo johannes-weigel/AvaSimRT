@@ -106,14 +106,15 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
                     anchors=anchors,
                 )
 
-        # 2) CHANNELSTATE (Sionna RT)
-        if config.channelstate is None:
+        if len(anchors) == 0:
             return SimResult(
                 successful=True,
-                message="Stopped after motion, no channelstate configured",
+                message="Gracefully aborted after motion: no anchors configured",
                 run_id=run_id,
                 output_dir=out_dir,
             )
+
+        # 2) CHANNELSTATE (Sionna RT)
         
         with log_step("CHANNELSTATE"):
             all_results = estimate_channelstate(

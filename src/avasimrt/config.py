@@ -70,7 +70,7 @@ class SimConfig:
 
     # Steps
     motion: MotionConfig = MotionConfig()
-    channelstate: ChannelStateConfig | None = None
+    channelstate: ChannelStateConfig = ChannelStateConfig()
     reporting: ReportingConfig = ReportingConfig()
     visualization: VisualizationConfig = VisualizationConfig()
 
@@ -132,11 +132,8 @@ class SimConfig:
             reporting=ReportingConfig.from_dict(get_dict(d, "reporting", "reporting") or {}),
             visualization=VisualizationConfig.from_dict(get_dict(d, "visualization", "visualization") or {}),
 
-            channelstate=(
-                ChannelStateConfig.from_dict(cs)
-                if (cs := get_dict(d, "channelstate", "channelstate")) is not None
-                else None
-            ),
+            channelstate=(ChannelStateConfig.from_dict(get_dict(d, "channelstate", "channelstate") or {})
+            )
         )
 
 
