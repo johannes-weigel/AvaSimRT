@@ -1,0 +1,38 @@
+obj: examples/seegrube/assets/scene.obj
+xml: examples/seegrube/assets/scene.xml
+meshes: examples/seegrube/assets/meshes
+heightmap:
+  npy: examples/seegrube/assets/heightmap.npy
+trajectory:
+  cache_dir: examples/seegrube/assets/trajectories
+  plots_png: true
+  plots_html: true
+
+anchors:
+  - id: "1"
+    x: -190
+    y: 310
+  - id: "2"
+    x: -150
+    y: 135
+  - id: "3"
+    x: -65
+    y: 165
+  - id: "4"
+    x: -85
+    y: 352
+  - id: "5"
+    x: -190
+    y: 415
+
+channelstate:
+  debug: false
+  render:
+    enabled: true
+    every_n_steps: 10
+    camera_x: 150
+    camera_y: -235
+    camera_z: 800
+
+visualization:
+  save_all_plots: true
