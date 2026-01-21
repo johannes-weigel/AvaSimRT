@@ -8,6 +8,7 @@ from typing import Sequence
 import mitsuba as mi
 from sionna.rt import (
     Camera,
+    ITURadioMaterial,
     PathSolver,
     PlanarArray,
     Receiver,
@@ -35,6 +36,18 @@ class _SionnaContext:
 
 def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
     scene = load_scene(scene_xml.as_posix())
+
+    terrain_material = ITURadioMaterial(
+        name="avasimrt_terrain",
+        itu_type="wet_ground",
+        thickness=float("inf"),
+        scattering_coefficient=0.3,
+    )
+    scene.add(terrain_material)
+
+    for obj_name, obj in scene.objects.items():
+        logger.info("Assigning terrain radio material to object: %s", obj_name)
+        obj.radio_material = terrain_material
 
     scene.tx_array = PlanarArray(
         num_rows=1,
@@ -208,7 +221,8 @@ def estimate_channelstate(
     logger.info("ChannelState: starting for %d time steps", total)
 
     for idx, r0 in enumerate(motion_results):
-        node_pos = mi.Point3f(r0.node.position)
+        pos = r0.node.position
+        node_pos = mi.Point3f(float(pos[0]), float(pos[1]), float(pos[2]))
         ctx.rx.position = node_pos
 
         paths = _solve_paths(ctx, cfg)
