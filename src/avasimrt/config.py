@@ -48,6 +48,7 @@ class SimConfig:
     scene_xml: Path | None = None
     scene_obj: Path | None = None
     scene_blender: Path | None = None
+    scene_meshes: Path | None = None
 
     run_id: str | None = None
 
@@ -59,9 +60,9 @@ class SimConfig:
 
     # Trajectory caching and visualization
     trajectory_cache_dir: Path | None = None  # Load from this dir instead of simulating
-    trajectory_save: bool = True  # Save trajectories after simulation
-    trajectory_plots_png: bool = True  # Save PNG visualizations
-    trajectory_plots_html: bool = True  # Save interactive HTML visualizations
+    trajectory_save: bool = False  # Save trajectories after simulation
+    trajectory_plots_png: bool = False  # Save PNG visualizations
+    trajectory_plots_html: bool = False  # Save interactive HTML visualizations
 
     # Shared
     nodes: list[PositionConfig] = field(default_factory=list)
@@ -104,6 +105,7 @@ class SimConfig:
             scene_xml = Path(d["xml"]) if d.get("xml") is not None else None,
             scene_obj = Path(d["obj"]) if d.get("obj") is not None else None,
             scene_blender = Path(d["blender"]) if d.get("blender") is not None else None,
+            scene_meshes = Path(d["meshes"]) if d.get("meshes") is not None else None,
 
             output = Path(d.get("output", "output")),
             delete_existing=coerce_bool(d.get("delete_existing", False)),
@@ -113,9 +115,9 @@ class SimConfig:
             heightmap_resolution=heightmap_resolution,
 
             trajectory_cache_dir=Path(trajectory_dict["cache_dir"]) if trajectory_dict.get("cache_dir") else None,
-            trajectory_save=coerce_bool(trajectory_dict.get("save", True)),
-            trajectory_plots_png=coerce_bool(trajectory_dict.get("plots_png", True)),
-            trajectory_plots_html=coerce_bool(trajectory_dict.get("plots_html", True)),
+            trajectory_save=coerce_bool(trajectory_dict.get("save", False)),
+            trajectory_plots_png=coerce_bool(trajectory_dict.get("plots_png", False)),
+            trajectory_plots_html=coerce_bool(trajectory_dict.get("plots_html", False)),
 
             nodes=[
                 PositionConfig.from_dict(a)

@@ -24,6 +24,7 @@ def prepare(*,
             scene_blender: Path | None = None,
             scene_obj: Path | None = None,
             scene_xml: Path | None = None,
+            scene_meshes: Path | None = None,
             blender_cmd: str | None = None,
             nodes: Sequence[PositionConfig],
             anchors: Sequence[PositionConfig],
@@ -31,7 +32,7 @@ def prepare(*,
             heightmap_resolution: float | None = None,) -> PreprocessorResult:
     # Validate input
     has_blender = scene_blender is not None
-    has_obj_xml = scene_obj is not None and scene_xml is not None
+    has_obj_xml = scene_obj is not None and scene_xml is not None and scene_meshes is not None
     
     if not has_blender and not has_obj_xml:
         raise ValueError("Must provide either scene_blender or both scene_obj and scene_xml")
@@ -47,6 +48,7 @@ def prepare(*,
     final_obj = out_dir / "scene.obj"
     final_xml = out_dir / "scene.xml"
     final_ply = out_dir / "scene.ply"
+    final_meshes = out_dir / "meshes"
     
     if has_blender:
         assert scene_blender is not None
@@ -60,12 +62,13 @@ def prepare(*,
         logger.info(f"Scene exported to: {out_dir}")
 
     else:
-        assert scene_obj is not None and scene_xml is not None
+        assert scene_obj is not None and scene_xml is not None and scene_meshes is not None
         logger.info(f"Copying scene files to: {out_dir}")
         
         try:
             shutil.copy2(scene_obj, final_obj)
             shutil.copy2(scene_xml, final_xml)
+            shutil.copytree(scene_meshes, final_meshes)
         except OSError as e:
             raise OSError(
                 f"Failed to copy scene files to '{out_dir}': {e}"

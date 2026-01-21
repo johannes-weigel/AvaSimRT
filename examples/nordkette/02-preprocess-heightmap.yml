@@ -1,4 +1,5 @@
 obj: examples/nordkette/assets/scene.obj
 xml: examples/nordkette/assets/scene.xml
+meshes: examples/nordkette/assets/meshes
 heightmap:
   resolution: 4

@@ -49,6 +49,7 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
             scene_blender=config.scene_blender,
             scene_obj=config.scene_obj,
             scene_xml=config.scene_xml,
+            scene_meshes=config.scene_meshes,
             blender_cmd=blender_cmd,
             nodes=config.nodes,
             anchors=config.anchors,
@@ -63,36 +64,33 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
         scene_obj = preprocessing_result.scene_obj
         scene_xml = preprocessing_result.scene_xml
 
-        if len(nodes) == 0:
-            return SimResult(
-                successful=True,
-                message="Gracefully aborted after preprocessing: no node configured",
-                run_id=run_id,
-                output_dir=out_dir,
-            )
-
 
         # 1) MOTION (PyBullet)
         if config.trajectory_cache_dir is not None:
             with log_step("MOTION (from cache)"):
-                motion_results = load_all_trajectories(config.trajectory_cache_dir)
+                trajectories = load_all_trajectories(config.trajectory_cache_dir)
         else:
+            if len(nodes) == 0:
+                return SimResult(
+                    successful=True,
+                    message="Gracefully aborted after preprocessing: no node configured",
+                    run_id=run_id,
+                    output_dir=out_dir,
+                )
             with log_step("MOTION"):
-                motion_results = simulate_motion(
+                trajectories = simulate_motion(
                     cfg=config.motion,
                     nodes=nodes,
                     scene_obj=scene_obj
                 )
                 if config.trajectory_save:
                     trajectory_dir = out_dir / "trajectories"
-                    save_all_trajectories(motion_results, trajectory_dir)
+                    save_all_trajectories(trajectories, trajectory_dir)
 
-        motion_results_first = next(iter(motion_results.values()), None)
-
-        if motion_results_first is None:
+        if len(trajectories.values()) == 0:
             return SimResult(
                 successful=True,
-                message="Gracefully aborted after motion: no node result",
+                message="Gracefully aborted after motion: no trajectories configured",
                 run_id=run_id,
                 output_dir=out_dir,
             )
@@ -100,7 +98,7 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
         if config.trajectory_plots_png or config.trajectory_plots_html:
             with log_step("TRAJECTORY VISUALIZATION"):
                 save_all_trajectory_visualizations(
-                    motion_results,
+                    trajectories,
                     out_dir / "trajectory_plots",
                     png=config.trajectory_plots_png,
                     html=config.trajectory_plots_html,
@@ -108,18 +106,26 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
                     anchors=anchors,
                 )
 
+        first_trajectory = next(iter(trajectories.values()), None)
+        assert first_trajectory is not None
+
         # 2) CHANNELSTATE (Sionna RT)
         if config.channelstate is None:
-            results = motion_results_first
-        else:
-            with log_step("CHANNELSTATE"):
-                results = estimate_channelstate(
-                    cfg=config.channelstate,
-                    anchors=anchors,
-                    motion_results=motion_results_first,
-                    scene_xml=scene_xml,
-                    out_dir=out_dir
-                )
+            return SimResult(
+                successful=True,
+                message="Stopped after motion, no channelstate configured",
+                run_id=run_id,
+                output_dir=out_dir,
+            )
+        
+        with log_step("CHANNELSTATE"):
+            results = estimate_channelstate(
+                cfg=config.channelstate,
+                anchors=anchors,
+                motion_results=first_trajectory,
+                scene_xml=scene_xml,
+                out_dir=out_dir
+            )
 
         # 3) REPORTING (CSV export)
         csv_path: Path | None = None

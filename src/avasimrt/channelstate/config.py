@@ -28,11 +28,11 @@ class ChannelConfig:
     def from_dict(cls, data: Mapping[str, Any] | None) -> "ChannelConfig":
         d = dict(data or {})
         return cls(
-            freq_center=coerce_float(d.get("freq_center", cls.freq_center)),
-            sc_num=coerce_int(d.get("sc_num", cls.sc_num)),
-            sc_spacing=coerce_float(d.get("sc_spacing", cls.sc_spacing)),
-            reflection_depth=coerce_int(d.get("reflection_depth", cls.reflection_depth)),
-            seed=coerce_int(d.get("seed", cls.seed)),
+            freq_center=coerce_float(d.get("freq_center", 3.8e9)),
+            sc_num=coerce_int(d.get("sc_num", 101)),
+            sc_spacing=coerce_float(d.get("sc_spacing", 5e6)),
+            reflection_depth=coerce_int(d.get("reflection_depth", 3)),
+            seed=coerce_int(d.get("seed", 41)),
         )
 
 
