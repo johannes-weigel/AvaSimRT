@@ -132,31 +132,22 @@ def _set_camera_target(p, cfg: MotionConfig, pos) -> None:
     )
 
 
-def simulate_motion(
+def _simulate_single_node(
     *,
     cfg: MotionConfig,
-    node: ResolvedPosition,
-    terrain_mesh_scale: float = 1.0,
-    scene_obj: Path
+    node_cfg: ResolvedPosition,
+    terrain_mesh_scale: float,
+    scene_obj: Path,
 ) -> list[Sample]:
-    """
-    Runs the pybullet motion step and returns:
-      - motion_results: list[Result] containing timestamp+NodeSnapshot
-      - resolved_anchors: list of (id, x, y, z) for convenience for next step
-    """
+    """Simulate a single node independently."""
     p = _load_pybullet()
     _connect(p, cfg)
 
     try:
-        if scene_obj is not None:
-            terrain_id = _load_terrain_mesh(p, scene_obj, scale=terrain_mesh_scale)
-        else:
-            raise ValueError("terrain_mesh is None")
-            
-
+        terrain_id = _load_terrain_mesh(p, scene_obj, scale=terrain_mesh_scale)
         _apply_terrain_dynamics(p, terrain_id, cfg)
 
-        node_id = spawn_node(p, cfg=cfg, node_cfg=node)
+        node_id = spawn_node(p, cfg=cfg, node_cfg=node_cfg)
 
         dt = cfg.time.time_step
         sim_time = cfg.time.sim_time
@@ -170,8 +161,6 @@ def simulate_motion(
         step_idx = 0
 
         out: list[Sample] = []
-
-        logger.info("Motion: sim_time=%.2fs, dt=%.4fs, steps=%d", sim_time, dt, total_steps)
 
         while t < sim_time:
             p.stepSimulation()
@@ -196,14 +185,43 @@ def simulate_motion(
 
             if step_idx % log_every == 0:
                 percent = int(step_idx * 100 / max(1, total_steps))
-                logger.info("Motion progress: %3d%% (%d/%d)", percent, step_idx, total_steps)
+                logger.info("Motion [%s] progress: %3d%% (%d/%d)", node_cfg.id, percent, step_idx, total_steps)
 
             t += dt
             if cfg.debug.mode == "GUI":
                 time.sleep(dt)
 
-        logger.info("Motion finished: %d snapshots collected", len(out))
         return out
 
     finally:
         _disconnect(p)
+
+
+def simulate_motion(
+    *,
+    cfg: MotionConfig,
+    nodes: Sequence[ResolvedPosition],
+    terrain_mesh_scale: float = 1.0,
+    scene_obj: Path
+) -> dict[str, list[Sample]]:
+    """
+    Runs independent pybullet simulations for each node (no inter-node collisions).
+    """
+    if scene_obj is None:
+        raise ValueError("scene_obj is None")
+
+    logger.info("Motion: sim_time=%.2fs, dt=%.4fs, nodes=%d", cfg.time.sim_time, cfg.time.time_step, len(nodes))
+
+    results: dict[str, list[Sample]] = {}
+    for node_cfg in nodes:
+        logger.info("Motion: simulating node '%s'", node_cfg.id)
+        samples = _simulate_single_node(
+            cfg=cfg,
+            node_cfg=node_cfg,
+            terrain_mesh_scale=terrain_mesh_scale,
+            scene_obj=scene_obj,
+        )
+        results[node_cfg.id] = samples
+        logger.info("Motion: node '%s' finished with %d samples", node_cfg.id, len(samples))
+
+    return results

@@ -35,18 +35,20 @@ def test_simulate_motion_plane_collects_three_samples(tmp_path: Path) -> None:
 
     results = ms.simulate_motion(
         cfg=cfg,
-        node=node,
+        nodes=[node],
         scene_obj=scene_obj,
     )
 
-    assert len(results) == 3  # t≈0,1,2
+    assert "NODE" in results
+    samples = results["NODE"]
+    assert len(samples) == 3  # t≈0,1,2
 
-    ts = [r.timestamp for r in results]
+    ts = [r.timestamp for r in samples]
     assert ts[0] == pytest.approx(0.0, abs=1e-6)
     assert ts[1] == pytest.approx(1.0, abs=0.02)
     assert ts[2] == pytest.approx(2.0, abs=0.02)
 
-    for r in results:
+    for r in samples:
         pos = r.node.position
         orn = r.node.orientation
         vel = r.node.linear_velocity
@@ -71,9 +73,11 @@ def test_simulate_motion_single_sample(tmp_path: Path) -> None:
 
     results = ms.simulate_motion(
         cfg=cfg,
-        node=node,
+        nodes=[node],
         scene_obj=scene_obj,
     )
 
-    assert len(results) >= 1
-    assert all(r.timestamp >= 0.0 for r in results)
+    assert "NODE" in results
+    samples = results["NODE"]
+    assert len(samples) >= 1
+    assert all(r.timestamp >= 0.0 for r in samples)

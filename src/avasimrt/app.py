@@ -74,19 +74,28 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
         with log_step("MOTION"):
             motion_results = simulate_motion(
                 cfg=config.motion,
-                node=nodes[0],
+                nodes=nodes,
                 scene_obj=scene_obj
+            )
+        motion_results_first = next(iter(motion_results.values()), None)
+
+        if (motion_results_first is None):
+            return SimResult(
+                successful=True,
+                message="Gracefully aborted after motion: no node result",
+                run_id=run_id,
+                output_dir=out_dir,
             )
 
         # 2) CHANNELSTATE (Sionna RT)
         if config.channelstate is None:
-            results = motion_results
+            results = motion_results_first
         else:
             with log_step("CHANNELSTATE"):
                 results = estimate_channelstate(
                     cfg=config.channelstate,
                     anchors=anchors,
-                    motion_results=motion_results,
+                    motion_results=motion_results_first,
                     scene_xml=scene_xml,
                     out_dir=out_dir
                 )
