@@ -48,8 +48,15 @@ class ChannelStateResult:
     total_duration: float  # full elapsed time including setup
 
 
-def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
-    scene = load_scene(scene_xml.as_posix())
+def _setup_scene(cfg: ChannelStateConfig, *, scene_src: Path | str | None) -> Scene:
+    if (scene_src):
+        scene = load_scene(
+            scene_src.as_posix() 
+            if isinstance(scene_src, Path) 
+            else scene_src
+        )
+    else:
+        scene = load_scene()
 
     terrain_material = ITURadioMaterial(
         name="avasimrt_terrain",
@@ -96,9 +103,9 @@ def _build_context(
     cfg: ChannelStateConfig,
     anchors: Sequence[ResolvedPosition],
     *,
-    scene_xml: Path,
+    scene_src: Path | str | None,
 ) -> _SionnaContext:
-    scene = _setup_scene(cfg, scene_xml=scene_xml)
+    scene = _setup_scene(cfg, scene_src=scene_src)
 
     txs: list[Transmitter] = []
     for a in anchors:
@@ -264,7 +271,7 @@ def estimate_channelstate(
         )
         logger.info("Snow scene prepared with %d spheres", n_snow)
 
-    ctx = _build_context(cfg, anchors, scene_xml=effective_scene_xml)
+    ctx = _build_context(cfg, anchors, scene_src=effective_scene_xml)
 
     for node_id, motion_results in trajectories.items():
         if not motion_results:
