@@ -32,6 +32,13 @@ class SnowMaterialConfig:
             ),
         )
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "itu_type": self.itu_type,
+            "thickness": self.thickness,
+            "scattering_coefficient": self.scattering_coefficient,
+        }
+
 
 @dataclass(frozen=True, slots=True)
 class SnowConfig:
@@ -63,6 +70,15 @@ class SnowConfig:
             material=SnowMaterialConfig.from_dict(d.get("material")),
         )
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "enabled": self.enabled,
+            "box_size": self.box_size,
+            "levels": self.levels,
+            "margin": self.margin,
+            "material": self.material.to_dict(),
+        }
+
 
 @dataclass(frozen=True, slots=True)
 class ChannelConfig:
@@ -92,6 +108,15 @@ class ChannelConfig:
             reflection_depth=coerce_int(d.get("reflection_depth", 3)),
             seed=coerce_int(d.get("seed", 41)),
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "freq_center": self.freq_center,
+            "sc_num": self.sc_num,
+            "sc_spacing": self.sc_spacing,
+            "reflection_depth": self.reflection_depth,
+            "seed": self.seed,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,6 +150,17 @@ class RenderConfig:
             camera_z=coerce_float(d.get("camera_z", defaults.camera_z)),
         )
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "enabled": self.enabled,
+            "every_n_steps": self.every_n_steps,
+            "width": self.width,
+            "height": self.height,
+            "camera_x": self.camera_x,
+            "camera_y": self.camera_y,
+            "camera_z": self.camera_z,
+        }
+
 
 @dataclass(frozen=True, slots=True)
 class ChannelStateConfig:
@@ -148,3 +184,11 @@ class ChannelStateConfig:
             snow=snow,
             debug=debug,
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "channel": self.channel.to_dict(),
+            "render": self.render.to_dict(),
+            "snow": self.snow.to_dict(),
+            "debug": self.debug,
+        }

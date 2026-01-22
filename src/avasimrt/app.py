@@ -123,16 +123,26 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
                 )
         else:
             with log_step("CHANNELSTATE"):
-                all_results = estimate_channelstate(
+                channelstate_result = estimate_channelstate(
                     cfg=config.channelstate,
                     anchors=anchors,
                     trajectories=trajectories,
                     scene_xml=scene_xml,
                     out_dir=out_dir
                 )
+                all_results = channelstate_result.samples
                 if config.channelstate_save:
                     channelstate_dir = out_dir / "channelstate"
-                    save_all_channelstates(all_results, channelstate_dir)
+                    save_all_channelstates(
+                        all_results,
+                        channelstate_dir,
+                        cfg=config.channelstate,
+                        trajectories=trajectories,
+                        anchors=anchors,
+                        scene_xml=scene_xml,
+                        durations=channelstate_result.durations,
+                        total_duration=channelstate_result.total_duration,
+                    )
 
         # 3) REPORTING (CSV export)
         csv_paths: list[Path] = []

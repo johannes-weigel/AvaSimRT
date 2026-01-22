@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
@@ -34,6 +35,14 @@ class _SionnaContext:
     solver: PathSolver
     rx: Receiver
     txs: list[Transmitter]
+
+
+@dataclass(slots=True)
+class ChannelStateResult:
+    """Result of channelstate computation including timing info."""
+    samples: dict[str, list[Sample]]
+    durations: dict[str, float]  # node_id -> duration in seconds
+    total_duration: float  # full elapsed time including setup
 
 
 def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
@@ -205,33 +214,37 @@ def estimate_channelstate(
     trajectories: dict[str, list[Sample]],
     out_dir: Path,
     scene_xml: Path
-) -> dict[str, list[Sample]]:
+) -> ChannelStateResult:
     """
     Computes channel state (CFR-derived readings) for each trajectory.
     Returns new Result objects with readings and optional image paths.
-    
+
     Returns:
-        Dictionary mapping node_id to list of samples with channel state readings
+        ChannelStateResult containing samples and per-node durations
     """
     if not trajectories:
         logger.warning("ChannelState: no trajectories to process")
-        return {}
+        return ChannelStateResult(samples={}, durations={}, total_duration=0.0)
+
+    start_time = time.perf_counter()
 
     if any(a.z is None for a in anchors):
         missing = [a.id for a in anchors if a.z is None]
         raise ValueError(f"Anchors must have resolved z before channelstate: {missing}")
 
     all_results: dict[str, list[Sample]] = {}
-    
+    durations: dict[str, float] = {}
+
     for node_id, motion_results in trajectories.items():
         if not motion_results:
             logger.warning("ChannelState: node '%s' has no motion results, skipping", node_id)
             continue
-            
+
+        node_start = time.perf_counter()
         rx_radius = motion_results[0].node.size
-        
+
         logger.info("ChannelState: processing trajectory for node '%s' (rx_radius=%.3f)", node_id, rx_radius)
-        
+
         ctx = _build_context(cfg, anchors, rx_radius=rx_radius, scene_xml=scene_xml)
 
         total = len(motion_results)
@@ -246,7 +259,7 @@ def estimate_channelstate(
             ctx.rx.position = node_pos
 
             paths = _solve_paths(ctx, cfg)
-            img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths, 
+            img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths,
                                      out_dir=out_dir / node_id,
                                      debug=cfg.debug)
 
@@ -257,8 +270,11 @@ def estimate_channelstate(
                 percent = int(idx * 100 / max(1, total))
                 logger.info("ChannelState [%s] progress: %3d%% (%d/%d)", node_id, percent, idx, total)
 
-        logger.info("ChannelState finished for node '%s': %d evaluated time steps", node_id, len(out))
+        node_duration = time.perf_counter() - node_start
+        durations[node_id] = node_duration
+        logger.info("ChannelState finished for node '%s': %d evaluated time steps in %.2f s", node_id, len(out), node_duration)
         all_results[node_id] = out
 
-    logger.info("ChannelState completed for %d trajectories", len(all_results))
-    return all_results
+    total_duration = time.perf_counter() - start_time
+    logger.info("ChannelState completed for %d trajectories in %.2f s", len(all_results), total_duration)
+    return ChannelStateResult(samples=all_results, durations=durations, total_duration=total_duration)

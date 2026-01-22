@@ -1,0 +1,54 @@
+{
+  "created_at": "2026-01-22T00:27:25.089517+00:00",
+  "total_duration_s": 218.862237688998,
+  "node_durations_sum_s": 218.86178306600777,
+  "config": {
+    "channel": {
+      "freq_center": 3800000000.0,
+      "sc_num": 101,
+      "sc_spacing": 5000000.0,
+      "reflection_depth": 3,
+      "seed": 41
+    },
+    "render": {
+      "enabled": false,
+      "every_n_steps": 50,
+      "width": 640,
+      "height": 360,
+      "camera_x": 150.0,
+      "camera_y": -235.0,
+      "camera_z": 800.0
+    },
+    "snow": {
+      "enabled": false,
+      "box_size": 1.0,
+      "levels": 1,
+      "margin": 10.0,
+      "material": {
+        "itu_type": "wet_ground",
+        "thickness": 0.1,
+        "scattering_coefficient": 0.5
+      }
+    },
+    "debug": false
+  },
+  "versions": {
+    "python": "3.11.7",
+    "sionna": "1.2.1",
+    "numpy": "1.26.4"
+  },
+  "anchors_hash_sha256": "5266472700994ae6ab545d1d8ddc84a25a7a154f95d05ec5da5244907aa68b6e",
+  "scene_xml_hash_sha256": "65ebcd5cd40c517df3dde79fb925984f0463b631dc4709b55084a4eac72c0e19",
+  "nodes": {
+    "Node": {
+      "file": "Node.npz",
+      "file_hash_sha256": "f3ee4885a21b1486e3b9ad4b47e2604c24c2b7075cfbb4d28ad499e6e9ec192b",
+      "trajectory_hash_sha256": "361fb97acfaedcb68860ca669e9939e34b6655b5f6c4c0a7c3d82474028cf3fe",
+      "duration_s": 218.86178306600777,
+      "n_samples": 300,
+      "n_anchors": 5,
+      "n_antennas": 2,
+      "n_frequencies": 101
+    }
+  }
+}
