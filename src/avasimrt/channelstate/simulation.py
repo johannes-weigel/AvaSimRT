@@ -208,19 +208,17 @@ def _build_context(*,
     return _SionnaContext(scene=scene, solver=solver, rx=rx, txs=txs, reflection_depth=reflection_depth, seed=seed)
 
 
-def _evaluate_cfr(
-    *,
-    paths,
-    cfg: ChannelStateConfig,
-    anchors: Sequence[ResolvedPosition],
-    node_snapshot,
-) -> list[AnchorReading]:
-    freqs = subcarrier_frequencies(cfg.channel.sc_num, cfg.channel.sc_spacing)
+def _evaluate_cfr(paths, *,
+                  sc_num: int,
+                  sc_spacing: float,
+                  anchors: Sequence[TransmitterConfig],
+                  node_pos: Position3D) -> list[AnchorReading]:
+    freqs = subcarrier_frequencies(sc_num, sc_spacing)
     h_raw = paths.cfr(frequencies=freqs, out_type="numpy", normalize_delays=False)
 
     readings: list[AnchorReading] = []
 
-    for i_anchor, anchor_cfg in enumerate(anchors):
+    for i_anchor, anchor in enumerate(anchors):
 
         def values_from_index(i_pol: int) -> list[ComplexReading]:
             h = h_raw[0][i_pol][i_anchor][0][0]
@@ -234,8 +232,8 @@ def _evaluate_cfr(
 
         readings.append(
             AnchorReading(
-                anchor_id=anchor_cfg.id,
-                distance=distance(node_snapshot, anchor_cfg),
+                anchor_id=anchor[0],
+                distance=distance(node_pos, anchor[1]),
                 values=[
                     AntennaReading(label="H", mean_db=mean_db_from_values(values_h), frequencies=values_h),
                     AntennaReading(label="V", mean_db=mean_db_from_values(values_v), frequencies=values_v),
@@ -293,7 +291,9 @@ def estimate_channelstate(
 
         snow = Snow(cfg.snow.material.itu_type, cfg.snow.material.thickness, cfg.snow.material.scattering_coefficient)
 
-    ctx = _build_context(anchors=[(a.id, (a.x, a.y, a.z), a.size) for a in anchors], 
+    unpacked_anchors = [(a.id, (a.x, a.y, a.z), a.size) for a in anchors]
+
+    ctx = _build_context(anchors=unpacked_anchors, 
                          scene_src=effective_scene_xml,
                          snow=snow,
                          freq_center=cfg.channel.freq_center,
@@ -327,7 +327,9 @@ def estimate_channelstate(
                                      out_dir=out_dir / node_id,
                                      debug=cfg.debug)
 
-            readings = _evaluate_cfr(paths=paths, cfg=cfg, anchors=anchors, node_snapshot=r0.node)
+            readings = _evaluate_cfr(paths, 
+                                     sc_num=cfg.channel.sc_num,sc_spacing=cfg.channel.sc_spacing,
+                                     anchors=unpacked_anchors, node_pos=r0.node.position)
             out.append(Sample(timestamp=r0.timestamp, node=r0.node, readings=readings, image=img))
 
             if idx % log_every == 0:

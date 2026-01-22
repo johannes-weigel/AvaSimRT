@@ -1,8 +1,7 @@
 import numpy as np
 import math
 
-from .preprocessing.result import ResolvedPosition
-from .result import ComplexReading, NodeSnapshot
+from .result import ComplexReading
 
 EPS = 1e-12
 
@@ -33,10 +32,10 @@ def mean_db_from_values(values: list[ComplexReading]) -> float:
     amps_db = amps_to_db(amps)
     return float(amps_db.mean())
 
-def distance(node: NodeSnapshot,
-             anchor: ResolvedPosition) -> float:
+def distance(node: tuple[float, float, float],
+             anchor: tuple[float, float, float]) -> float:
     return math.sqrt(
-        (node.position[0] - anchor.x) ** 2 +
-        (node.position[1] - anchor.y) ** 2 +
-        (node.position[2] - anchor.z if anchor.z is not None else 0) ** 2
+        (node[0] - anchor[0]) ** 2 +
+        (node[1] - anchor[1]) ** 2 +
+        (node[2] - anchor[2]) ** 2
     )
