@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 Position3D = tuple[float, float, float]
 TransmitterConfig = tuple[str, Position3D, float]
+Resolution = tuple[int, int]
 
 
 # Infinite thickness to prevent any transmition though mountain
@@ -68,10 +69,22 @@ class _SionnaContext:
                            synthetic_array=False,
                            seed=self._seed)
     
+    def render_to_file(self, paths: Paths | None, *,
+                       origin: Position3D,
+                       target: Position3D,
+                       file_path: Path,
+                       resolution: Resolution):
+        cam = Camera(position=mi.Point3f(origin),
+                     look_at=mi.Point3f(target))
+        self.scene.render_to_file(camera=cam,
+                                  paths=paths,
+                                  filename=file_path.as_posix(),
+                                  resolution=resolution)    
+    
     def render_if_enabled(self, *,
                           cfg: ChannelStateConfig,
                           step_idx: int,
-                          node_pos: mi.Point3f,
+                          node_pos: Position3D,
                           paths: Paths,
                           out_dir: Path,
                           debug: bool) -> Path | None:
@@ -84,11 +97,6 @@ class _SionnaContext:
         out_dir.mkdir(parents=True, exist_ok=True)
         img_path = out_dir / f"scene_{step_idx}.png"
 
-        cam = Camera(
-            position=mi.Point3f(r.camera_x, r.camera_y, r.camera_z),
-            look_at=node_pos,
-        )
-
         a, _ = paths.cir()
         # a is a list of TensorXf; check if num_paths dimension (index 4) is > 0
         has_valid_paths = len(a) > 0 and len(a[0].shape) > 4 and a[0].shape[4] > 0
@@ -100,12 +108,11 @@ class _SionnaContext:
             sionna_vispy.get_canvas(self.scene).show()
             sionna_vispy.get_canvas(self.scene).app.run()
 
-        self.scene.render_to_file(
-            camera=cam,
-            paths=paths if has_valid_paths else None,
-            filename=img_path.as_posix(),
-            resolution=(r.width, r.height),
-        )
+        self.render_to_file(origin=(r.camera_x, r.camera_y, r.camera_z),
+                            target=node_pos,
+                            paths=paths if has_valid_paths else None,
+                            file_path=img_path,
+                            resolution=(r.width, r.height))
 
         return img_path
 
@@ -306,8 +313,8 @@ def estimate_channelstate(
 
         for idx, r0 in enumerate(motion_results):
             pos = r0.node.position
-            node_pos = mi.Point3f(float(pos[0]), float(pos[1]), float(pos[2]))
-            ctx.rx.position = node_pos
+            node_pos = (float(pos[0]), float(pos[1]), float(pos[2]))
+            ctx.rx.position = mi.Point3f(node_pos)
 
             paths = ctx.solve_paths()
             img = ctx.render_if_enabled(cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths,
