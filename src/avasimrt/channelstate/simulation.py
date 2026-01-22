@@ -27,7 +27,7 @@ from avasimrt.preprocessing.result import ResolvedPosition
 from avasimrt.result import AnchorReading, AntennaReading, ComplexReading, Sample
 from avasimrt.math import distance, mean_db_from_values
 from .config import ChannelStateConfig
-from .snow import prepare_snow_scene, apply_snow_material, SNOW_MESH_ID
+from .snow import prepare_snow_scene, apply_snow_material, SNOW_MESH_ID, SnowConfig
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,12 @@ class ChannelStateResult:
     total_duration: float  # full elapsed time including setup
 
 
-def _setup_scene(cfg: ChannelStateConfig, *, scene_src: Path | str | None) -> Scene:
+def _setup_scene(*, 
+                 scene_src: Path | str | None,
+                 snow: SnowConfig | None,
+                 freq_center: float,
+                 sc_num: float,
+                 sc_spacing: float) -> Scene:
     if (scene_src):
         scene = load_scene(
             scene_src.as_posix() 
@@ -78,7 +83,8 @@ def _setup_scene(cfg: ChannelStateConfig, *, scene_src: Path | str | None) -> Sc
         obj.radio_material = terrain_material
 
     # Apply snow material if snow mesh is present
-    apply_snow_material(scene, cfg.snow)
+    if (snow):
+        apply_snow_material(scene, snow)
 
     scene.tx_array = PlanarArray(
         num_rows=1,
@@ -97,8 +103,8 @@ def _setup_scene(cfg: ChannelStateConfig, *, scene_src: Path | str | None) -> Sc
         polarization="cross",
     )
 
-    scene.frequency = cfg.channel.freq_center
-    scene.bandwidth = cfg.channel.sc_num * cfg.channel.sc_spacing
+    scene.frequency = freq_center
+    scene.bandwidth = sc_num * sc_spacing
     return scene
 
 
@@ -108,7 +114,11 @@ def _build_context(
     *,
     scene_src: Path | str | None,
 ) -> _SionnaContext:
-    scene = _setup_scene(cfg, scene_src=scene_src)
+    scene = _setup_scene(scene_src=scene_src,
+                         snow=cfg.snow,
+                         freq_center=cfg.channel.freq_center,
+                         sc_num=cfg.channel.sc_num,
+                         sc_spacing=cfg.channel.sc_spacing)
 
     txs: list[Transmitter] = []
     for id, pos, size in anchors:
