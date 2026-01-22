@@ -42,12 +42,73 @@ terrain_material = ITURadioMaterial(name="avasimrt_terrain",
                                     scattering_coefficient=0.3,
                                     color=(0.45, 0.35, 0.25))
 
-@dataclass(slots=True)
 class _SionnaContext:
-    scene: Scene
-    solver: PathSolver
-    rx: Receiver
-    txs: list[Transmitter]
+    def __init__(self,
+                 scene: Scene,
+                 solver: PathSolver,
+                 rx: Receiver,
+                 txs: list[Transmitter],
+                 reflection_depth: int, 
+                 seed: int | None):
+        self.scene = scene
+        self._solver = solver
+        self.rx = rx
+        self._txs = txs
+        
+        self._seed = seed if seed else 42
+        self._reflection_depth = reflection_depth
+
+    def solve_paths(self) -> Paths:
+        return self._solver(scene=self.scene,
+                           max_depth=self._reflection_depth,
+                           los=True,
+                           specular_reflection=True,
+                           diffuse_reflection=False,
+                           refraction=True,
+                           synthetic_array=False,
+                           seed=self._seed)
+    
+    def render_if_enabled(self, *,
+                          cfg: ChannelStateConfig,
+                          step_idx: int,
+                          node_pos: mi.Point3f,
+                          paths: Paths,
+                          out_dir: Path,
+                          debug: bool) -> Path | None:
+        r = cfg.render
+        if not r.enabled or r.every_n_steps <= 0:
+            return None
+        if step_idx % r.every_n_steps != 0:
+            return None
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+        img_path = out_dir / f"scene_{step_idx}.png"
+
+        cam = Camera(
+            position=mi.Point3f(r.camera_x, r.camera_y, r.camera_z),
+            look_at=node_pos,
+        )
+
+        a, _ = paths.cir()
+        # a is a list of TensorXf; check if num_paths dimension (index 4) is > 0
+        has_valid_paths = len(a) > 0 and len(a[0].shape) > 4 and a[0].shape[4] > 0
+
+        if debug:
+            with sionna_vispy.patch():
+                self.scene.preview(paths=paths if has_valid_paths else None)
+
+            sionna_vispy.get_canvas(self.scene).show()
+            sionna_vispy.get_canvas(self.scene).app.run()
+
+        self.scene.render_to_file(
+            camera=cam,
+            paths=paths if has_valid_paths else None,
+            filename=img_path.as_posix(),
+            resolution=(r.width, r.height),
+        )
+
+        return img_path
+
 
 
 @dataclass(slots=True)
@@ -108,7 +169,9 @@ def _build_context(*,
                    scene_src: Path | str | None,
                    snow: Snow | None,
                    freq_center: float | None,
-                   bandwidth: float | None) -> _SionnaContext:
+                   bandwidth: float | None,
+                   reflection_depth: int, 
+                   seed: int | None) -> _SionnaContext:
     scene = _setup_scene(scene_src=scene_src,
                          snow=snow,
                          freq_center=freq_center,
@@ -129,20 +192,7 @@ def _build_context(*,
     scene.add(rx)
 
     solver = PathSolver()
-    return _SionnaContext(scene=scene, solver=solver, rx=rx, txs=txs)
-
-
-def _solve_paths(ctx: _SionnaContext, cfg: ChannelStateConfig) -> Paths:
-    return ctx.solver(
-        scene=ctx.scene,
-        max_depth=cfg.channel.reflection_depth,
-        los=True,
-        specular_reflection=True,
-        diffuse_reflection=False,
-        refraction=True,
-        synthetic_array=False,
-        seed=cfg.channel.seed,
-    )
+    return _SionnaContext(scene=scene, solver=solver, rx=rx, txs=txs, reflection_depth=reflection_depth, seed=seed)
 
 
 def _evaluate_cfr(
@@ -181,51 +231,6 @@ def _evaluate_cfr(
         )
 
     return readings
-
-
-def _render_if_enabled(
-    *,
-    ctx: _SionnaContext,
-    cfg: ChannelStateConfig,
-    step_idx: int,
-    node_pos: mi.Point3f,
-    paths: Paths,
-    out_dir: Path,
-    debug: bool
-) -> Path | None:
-    r = cfg.render
-    if not r.enabled or r.every_n_steps <= 0:
-        return None
-    if step_idx % r.every_n_steps != 0:
-        return None
-
-    out_dir.mkdir(parents=True, exist_ok=True)
-    img_path = out_dir / f"scene_{step_idx}.png"
-
-    cam = Camera(
-        position=mi.Point3f(r.camera_x, r.camera_y, r.camera_z),
-        look_at=node_pos,
-    )
-
-    a, _ = paths.cir()
-    # a is a list of TensorXf; check if num_paths dimension (index 4) is > 0
-    has_valid_paths = len(a) > 0 and len(a[0].shape) > 4 and a[0].shape[4] > 0
-
-    if debug:
-        with sionna_vispy.patch():
-            ctx.scene.preview(paths=paths if has_valid_paths else None)
-
-        sionna_vispy.get_canvas(ctx.scene).show()
-        sionna_vispy.get_canvas(ctx.scene).app.run()
-
-    ctx.scene.render_to_file(
-        camera=cam,
-        paths=paths if has_valid_paths else None,
-        filename=img_path.as_posix(),
-        resolution=(r.width, r.height),
-    )
-
-    return img_path
 
 
 def estimate_channelstate(
@@ -279,7 +284,8 @@ def estimate_channelstate(
                          scene_src=effective_scene_xml,
                          snow=snow,
                          freq_center=cfg.channel.freq_center,
-                         bandwidth=cfg.channel.sc_num * cfg.channel.sc_spacing)
+                         bandwidth=cfg.channel.sc_num * cfg.channel.sc_spacing,
+                         reflection_depth=cfg.channel.reflection_depth, seed=cfg.channel.seed)
 
     for node_id, motion_results in trajectories.items():
         if not motion_results:
@@ -303,8 +309,8 @@ def estimate_channelstate(
             node_pos = mi.Point3f(float(pos[0]), float(pos[1]), float(pos[2]))
             ctx.rx.position = node_pos
 
-            paths = _solve_paths(ctx, cfg)
-            img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths,
+            paths = ctx.solve_paths()
+            img = ctx.render_if_enabled(cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths,
                                      out_dir=out_dir / node_id,
                                      debug=cfg.debug)
 
