@@ -76,7 +76,6 @@ def _setup_scene(*,
     scene.add(terrain_material)
 
     for obj_name, obj in scene.objects.items():
-        # Skip snow mesh - it gets its own material
         if obj_name == SNOW_MESH_ID:
             continue
         logger.info("Assigning terrain radio material to object: %s", obj_name)
@@ -85,56 +84,50 @@ def _setup_scene(*,
     if (snow):
         snow.apply_material(scene)
 
-    scene.tx_array = PlanarArray(
-        num_rows=1,
-        num_cols=1,
-        vertical_spacing=0.5,
-        horizontal_spacing=0.5,
-        pattern="tr38901",
-        polarization="V",
-    )
-    scene.rx_array = PlanarArray(
-        num_rows=1,
-        num_cols=1,
-        vertical_spacing=0.5,
-        horizontal_spacing=0.5,
-        pattern="dipole",
-        polarization="cross",
-    )
+    # Defaults from tutorial, experiment-specific tuning
+    scene.tx_array = PlanarArray(num_rows=1,
+                                 num_cols=1,
+                                 vertical_spacing=0.5,
+                                 horizontal_spacing=0.5,
+                                 pattern="tr38901",
+                                 polarization="V")
+    scene.rx_array = PlanarArray(num_rows=1,
+                                 num_cols=1,
+                                 vertical_spacing=0.5,
+                                 horizontal_spacing=0.5,
+                                 pattern="dipole",
+                                 polarization="cross")
 
     scene.frequency = freq_center
     scene.bandwidth = sc_num * sc_spacing
     return scene
 
 
-def _build_context(
-    cfg: ChannelStateConfig,
-    anchors: Sequence[TransmitterConfig],
-    *,
-    scene_src: Path | str | None,
-    snow: Snow | None,
-) -> _SionnaContext:
+def _build_context(*,
+                   anchors: Sequence[TransmitterConfig],
+                   scene_src: Path | str | None,
+                   snow: Snow | None,
+                   freq_center: float,
+                   sc_num: float,
+                   sc_spacing: float) -> _SionnaContext:
     scene = _setup_scene(scene_src=scene_src,
                          snow=snow,
-                         freq_center=cfg.channel.freq_center,
-                         sc_num=cfg.channel.sc_num,
-                         sc_spacing=cfg.channel.sc_spacing)
+                         freq_center=freq_center,
+                         sc_num=sc_num,
+                         sc_spacing=sc_spacing)
 
     txs: list[Transmitter] = []
     for id, pos, size in anchors:
-        tx = Transmitter(
-            name=id,
-            position=mi.Point3f(pos),
-            display_radius=size,
-        )
+        tx = Transmitter(name=id,
+                         position=mi.Point3f(pos),
+                         display_radius=size)
         scene.add(tx)
         txs.append(tx)
 
-    rx = Receiver(
-        name="node",
-        position=mi.Point3f(0, 0, 0),
-        display_radius=1.0,  # default, updated per trajectory
-    )
+    # Placeholder - gets updated for each trajectory / node configuration
+    rx = Receiver(name="node",
+                  position=mi.Point3f(0, 0, 0),
+                  display_radius=1.0)
     scene.add(rx)
 
     solver = PathSolver()
@@ -284,8 +277,12 @@ def estimate_channelstate(
 
         snow = Snow(cfg.snow.material.itu_type, cfg.snow.material.thickness, cfg.snow.material.scattering_coefficient)
 
-    ctx = _build_context(cfg, [(a.id, (a.x, a.y, a.z), a.size) for a in anchors], scene_src=effective_scene_xml,
-                         snow=snow)
+    ctx = _build_context(anchors=[(a.id, (a.x, a.y, a.z), a.size) for a in anchors], 
+                         scene_src=effective_scene_xml,
+                         snow=snow,
+                         freq_center=cfg.channel.freq_center,
+                         sc_num=cfg.channel.sc_num,
+                         sc_spacing=cfg.channel.sc_spacing)
 
     for node_id, motion_results in trajectories.items():
         if not motion_results:
