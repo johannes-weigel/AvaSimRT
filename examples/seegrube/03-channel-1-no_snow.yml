@@ -29,8 +29,8 @@ channelstate:
   debug: false
   save: true
   render:
-    enabled: false
-    every_n_steps: 50
+    enabled: true
+    every_n_steps: 20
     camera_x: 150
     camera_y: -235
     camera_z: 800

@@ -21,10 +21,13 @@ from sionna.rt import (
 )
 import sionna_vispy
 
+import numpy as np
+
 from avasimrt.preprocessing.result import ResolvedPosition
 from avasimrt.result import AnchorReading, AntennaReading, ComplexReading, Sample
 from avasimrt.math import distance, mean_db_from_values
 from .config import ChannelStateConfig
+from .snow import prepare_snow_scene, apply_snow_material, SNOW_MESH_ID
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +61,14 @@ def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
     scene.add(terrain_material)
 
     for obj_name, obj in scene.objects.items():
+        # Skip snow mesh - it gets its own material
+        if obj_name == SNOW_MESH_ID:
+            continue
         logger.info("Assigning terrain radio material to object: %s", obj_name)
         obj.radio_material = terrain_material
+
+    # Apply snow material if snow mesh is present
+    apply_snow_material(scene, cfg.snow)
 
     scene.tx_array = PlanarArray(
         num_rows=1,
@@ -83,7 +92,12 @@ def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
     return scene
 
 
-def _build_context(cfg: ChannelStateConfig, anchors: Sequence[ResolvedPosition], *, scene_xml: Path) -> _SionnaContext:
+def _build_context(
+    cfg: ChannelStateConfig,
+    anchors: Sequence[ResolvedPosition],
+    *,
+    scene_xml: Path,
+) -> _SionnaContext:
     scene = _setup_scene(cfg, scene_xml=scene_xml)
 
     txs: list[Transmitter] = []
@@ -213,7 +227,8 @@ def estimate_channelstate(
     anchors: Sequence[ResolvedPosition],
     trajectories: dict[str, list[Sample]],
     out_dir: Path,
-    scene_xml: Path
+    scene_xml: Path,
+    heightmap: np.ndarray | None = None,
 ) -> ChannelStateResult:
     """
     Computes channel state (CFR-derived readings) for each trajectory.
@@ -235,7 +250,21 @@ def estimate_channelstate(
     all_results: dict[str, list[Sample]] = {}
     durations: dict[str, float] = {}
 
-    ctx = _build_context(cfg, anchors, scene_xml=scene_xml)
+    # Prepare snow scene if enabled (generates PLY and modified XML)
+    effective_scene_xml = scene_xml
+    if cfg.snow.enabled and heightmap is not None:
+        nodes = [[sample.node for sample in samples] for samples in trajectories.values()]
+        effective_scene_xml, n_snow = prepare_snow_scene(
+            cfg=cfg.snow,
+            scene_xml=scene_xml,
+            heightmap=heightmap,
+            anchors=anchors,
+            nodes=nodes,
+            out_dir=out_dir,
+        )
+        logger.info("Snow scene prepared with %d spheres", n_snow)
+
+    ctx = _build_context(cfg, anchors, scene_xml=effective_scene_xml)
 
     for node_id, motion_results in trajectories.items():
         if not motion_results:

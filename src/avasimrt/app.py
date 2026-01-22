@@ -64,6 +64,7 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
         anchors = preprocessing_result.anchors
         scene_obj = preprocessing_result.scene_obj
         scene_xml = preprocessing_result.scene_xml
+        heightmap = preprocessing_result.heightmap
 
 
         # 1) MOTION (PyBullet)
@@ -127,6 +128,7 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
                     cfg=config.channelstate,
                     anchors=anchors,
                     trajectories=trajectories,
+                    heightmap=heightmap,
                     scene_xml=scene_xml,
                     out_dir=out_dir
                 )

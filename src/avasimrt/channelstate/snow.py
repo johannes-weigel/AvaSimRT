@@ -2,16 +2,15 @@ from __future__ import annotations
 
 import logging
 import time
+import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import TYPE_CHECKING, Sequence
 
-import mitsuba as mi
 import numpy as np
 from scipy.spatial import Delaunay
 from shapely.geometry import MultiPoint, Point, Polygon
 from shapely.ops import unary_union
-from sionna.rt import ITURadioMaterial, Scene, SceneObject
-from sionna.rt.utils.meshes import clone_mesh, load_mesh, transform_mesh
-import sionna.rt.scene as sionna_scenes
+from sionna.rt import ITURadioMaterial, Scene
 
 from avasimrt.motion.result import NodeSnapshot
 from avasimrt.preprocessing.result import ResolvedPosition
@@ -20,6 +19,9 @@ if TYPE_CHECKING:
     from avasimrt.channelstate.config import SnowConfig
 
 logger = logging.getLogger(__name__)
+
+SNOW_MESH_ID = "snow_mesh"
+SNOW_MATERIAL_ID = "mat-itu_wet_ground"
 
 
 def _build_alpha_shape(points: np.ndarray, alpha: float, margin: float) -> Polygon:
@@ -102,7 +104,7 @@ def extract_relevant_heightmap(
     nodes: Sequence[Sequence[NodeSnapshot]],
     alpha: float = 0.05,
     margin: float = 10.0,
-    quick: bool = False,
+    quick: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     start = time.perf_counter()
     logger.info("Extracting relevant heightmap: shape=%s, anchors=%d, node_trajectories=%d, quick=%s",
@@ -137,63 +139,210 @@ def extract_relevant_heightmap(
     return filtered_heightmap, mask
 
 
-def _create_snow_material(cfg: "SnowConfig") -> ITURadioMaterial:
-    return ITURadioMaterial(
-        name="avasimrt_snow",
-        itu_type=cfg.material.itu_type,
-        thickness=cfg.material.thickness,
-        scattering_coefficient=cfg.material.scattering_coefficient,
-    )
+def _generate_sphere_mesh(n_lat: int = 8, n_lon: int = 16) -> tuple[np.ndarray, np.ndarray]:
+    """Generate a unit sphere mesh centered at origin.
+
+    Returns:
+        vertices: (n_vertices, 3) array of vertex positions
+        faces: (n_faces, 3) array of vertex indices for each triangle
+    """
+    vertices = []
+    faces = []
+
+    # Generate vertices
+    for i in range(n_lat + 1):
+        lat = np.pi * i / n_lat - np.pi / 2  # -pi/2 to pi/2
+        for j in range(n_lon):
+            lon = 2 * np.pi * j / n_lon
+            x = np.cos(lat) * np.cos(lon)
+            y = np.cos(lat) * np.sin(lon)
+            z = np.sin(lat)
+            vertices.append([x, y, z])
+
+    vertices = np.array(vertices, dtype=np.float32)
+
+    # Generate faces
+    for i in range(n_lat):
+        for j in range(n_lon):
+            v0 = i * n_lon + j
+            v1 = i * n_lon + (j + 1) % n_lon
+            v2 = (i + 1) * n_lon + j
+            v3 = (i + 1) * n_lon + (j + 1) % n_lon
+
+            faces.append([v0, v2, v1])
+            faces.append([v1, v2, v3])
+
+    faces = np.array(faces, dtype=np.int32)
+    return vertices, faces
 
 
-def _create_box_mesh(
-    name: str,
-    position: tuple[float, float, float],
-    size: float,
-    material: ITURadioMaterial,
-) -> SceneObject:
-    base_mesh = load_mesh(sionna_scenes.sphere)
-    mesh = clone_mesh(base_mesh, name=name)
+def _generate_combined_snow_ply(
+    positions: np.ndarray,
+    box_size: float,
+    levels: int,
+    output_path: Path,
+) -> int:
+    """Generate a PLY file with spheres at all snow positions.
 
-    scale = mi.Point3f(size, size, size)
-    translation = mi.Point3f(position[0], position[1], position[2])
-    transform_mesh(mesh, translation=translation, scale=scale)
+    Args:
+        positions: (n, 3) array of (x, y, z) positions
+        box_size: Size/diameter of each snow sphere
+        levels: Number of vertical levels of snow
+        output_path: Path to write the PLY file
 
-    return SceneObject(mi_mesh=mesh, name=name, radio_material=material)
+    Returns:
+        Total number of spheres created
+    """
+    start = time.perf_counter()
+
+    # Generate base sphere geometry
+    base_vertices, base_faces = _generate_sphere_mesh(n_lat=6, n_lon=12)
+    n_base_verts = len(base_vertices)
+    n_base_faces = len(base_faces)
+
+    total_spheres = len(positions) * levels
+    total_vertices = total_spheres * n_base_verts
+    total_faces = total_spheres * n_base_faces
+
+    logger.info("Generating snow PLY: %d spheres (%d positions x %d levels), %d vertices, %d faces",
+                total_spheres, len(positions), levels, total_vertices, total_faces)
+
+    # Pre-allocate arrays
+    all_vertices = np.zeros((total_vertices, 3), dtype=np.float32)
+    all_faces = np.zeros((total_faces, 3), dtype=np.int32)
+
+    sphere_idx = 0
+    log_interval = max(1, len(positions) // 10)
+    radius = box_size / 2.0
+
+    for i, pos in enumerate(positions):
+        x, y, z = float(pos[0]), float(pos[1]), float(pos[2])
+
+        for level in range(levels):
+            z_offset = z + (level + 0.5) * box_size
+
+            # Transform vertices for this sphere
+            vert_start = sphere_idx * n_base_verts
+            vert_end = vert_start + n_base_verts
+            all_vertices[vert_start:vert_end] = base_vertices * radius + [x, y, z_offset]
+
+            # Add faces with offset vertex indices
+            face_start = sphere_idx * n_base_faces
+            face_end = face_start + n_base_faces
+            all_faces[face_start:face_end] = base_faces + vert_start
+
+            sphere_idx += 1
+
+        if i % log_interval == 0:
+            progress = (i / len(positions)) * 100
+            logger.info("Snow PLY generation progress: %.0f%% (%d/%d positions)", progress, i, len(positions))
+
+    # Write PLY file
+    logger.info("Writing snow PLY to %s", output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, 'wb') as f:
+        # Header
+        header = f"""ply
+format binary_little_endian 1.0
+element vertex {total_vertices}
+property float x
+property float y
+property float z
+element face {total_faces}
+property list uchar int vertex_indices
+end_header
+"""
+        f.write(header.encode('ascii'))
+
+        # Vertices
+        all_vertices.tofile(f)
+
+        # Faces (each face: 1 byte count + 3 int indices)
+        for face in all_faces:
+            f.write(np.uint8(3).tobytes())
+            f.write(face.tobytes())
+
+    elapsed = time.perf_counter() - start
+    logger.info("Snow PLY generated in %.3fs: %d spheres, %.2f MB",
+                elapsed, total_spheres, output_path.stat().st_size / 1024 / 1024)
+
+    return total_spheres
 
 
-def add_snow_to_scene(
-    scene: Scene,
+def _inject_snow_into_xml(
+    scene_xml: Path,
+    snow_ply_path: Path,
+    output_xml: Path,
+) -> None:
+    """Inject snow mesh and material into scene XML.
+
+    Args:
+        scene_xml: Original scene XML path
+        snow_ply_path: Path to the snow PLY mesh
+        output_xml: Path to write the modified XML
+    """
+    tree = ET.parse(scene_xml)
+    root = tree.getroot()
+
+    # Add snow material (using a default bsdf, will be replaced with ITURadioMaterial after loading)
+    snow_bsdf = ET.SubElement(root, "bsdf", {"type": "twosided", "id": SNOW_MATERIAL_ID, "name": SNOW_MATERIAL_ID})
+    inner_bsdf = ET.SubElement(snow_bsdf, "bsdf", {"type": "principled", "name": "bsdf"})
+    ET.SubElement(inner_bsdf, "rgb", {"value": "0.95 0.97 1.0", "name": "base_color"})
+    ET.SubElement(inner_bsdf, "float", {"name": "roughness", "value": "0.8"})
+
+    # Add snow mesh shape
+    # Make the path relative to the output XML location
+    relative_ply_path = snow_ply_path.relative_to(output_xml.parent)
+
+    snow_shape = ET.SubElement(root, "shape", {"type": "ply", "id": SNOW_MESH_ID, "name": SNOW_MESH_ID})
+    ET.SubElement(snow_shape, "string", {"name": "filename", "value": str(relative_ply_path)})
+    ET.SubElement(snow_shape, "boolean", {"name": "face_normals", "value": "true"})
+    ET.SubElement(snow_shape, "ref", {"id": SNOW_MATERIAL_ID, "name": "bsdf"})
+
+    # Write modified XML
+    tree.write(output_xml, encoding="unicode", xml_declaration=False)
+
+    # Re-read and add XML declaration + scene version
+    with open(output_xml, 'r') as f:
+        content = f.read()
+
+    with open(output_xml, 'w') as f:
+        f.write(content)
+
+    logger.info("Injected snow mesh into XML: %s", output_xml)
+
+
+def prepare_snow_scene(
     cfg: "SnowConfig",
+    scene_xml: Path,
     heightmap: np.ndarray,
     anchors: Sequence[ResolvedPosition],
     nodes: Sequence[Sequence[NodeSnapshot]],
-) -> int:
-    """
-    Add snow boxes to the Sionna scene at relevant heightmap positions.
+    out_dir: Path,
+) -> tuple[Path, int]:
+    """Prepare a scene XML with snow mesh baked in.
 
     Args:
-        scene: Loaded Sionna scene to add snow to.
-        cfg: Snow configuration containing material and placement settings.
-        heightmap: 3D array of shape (n_x, n_y, 3) with (x, y, z) coordinates.
-        anchors: Sequence of anchor positions.
-        nodes: Sequence of node trajectories (each trajectory is a sequence of snapshots).
+        cfg: Snow configuration
+        scene_xml: Original scene XML path
+        heightmap: 3D array of shape (n_x, n_y, 3) with (x, y, z) coordinates
+        anchors: Sequence of anchor positions
+        nodes: Sequence of node trajectories
+        out_dir: Output directory for generated files
 
     Returns:
-        Number of snow boxes added to the scene.
+        Tuple of (path to modified scene XML, number of snow spheres)
     """
     if not cfg.enabled:
-        logger.info("Snow disabled, skipping")
-        return 0
+        logger.info("Snow disabled, using original scene")
+        return scene_xml, 0
 
     start = time.perf_counter()
-    logger.info(
-        "Adding snow to scene: box_size=%.2f, levels=%d, margin=%.1f",
-        cfg.box_size,
-        cfg.levels,
-        cfg.margin,
-    )
+    logger.info("Preparing snow scene: box_size=%.2f, levels=%d, margin=%.1f",
+                cfg.box_size, cfg.levels, cfg.margin)
 
+    # Extract relevant positions
     relevant_positions, _ = extract_relevant_heightmap(
         heightmap=heightmap,
         anchors=anchors,
@@ -203,36 +352,49 @@ def add_snow_to_scene(
 
     if len(relevant_positions) == 0:
         logger.warning("No relevant heightmap positions found for snow placement")
-        return 0
+        return scene_xml, 0
 
-    snow_material = _create_snow_material(cfg)
+    # Generate snow PLY
+    snow_ply_path = out_dir / "meshes" / "snow_mesh.ply"
+    n_spheres = _generate_combined_snow_ply(
+        positions=relevant_positions,
+        box_size=cfg.box_size,
+        levels=cfg.levels,
+        output_path=snow_ply_path,
+    )
+
+    # Inject into XML
+    snow_scene_xml = out_dir / "scene_with_snow.xml"
+    _inject_snow_into_xml(scene_xml, snow_ply_path, snow_scene_xml)
+
+    logger.info("Snow scene prepared in %.3fs", time.perf_counter() - start)
+    return snow_scene_xml, n_spheres
+
+
+def apply_snow_material(scene: Scene, cfg: "SnowConfig") -> None:
+    """Apply the configured radio material to the snow mesh after scene loading.
+
+    Args:
+        scene: Loaded Sionna scene
+        cfg: Snow configuration
+    """
+    if not cfg.enabled:
+        return
+
+    if SNOW_MESH_ID not in scene.objects:
+        logger.warning("Snow mesh '%s' not found in scene objects", SNOW_MESH_ID)
+        return
+
+    snow_material = ITURadioMaterial(
+        name="avasimrt_snow",
+        itu_type=cfg.material.itu_type,
+        thickness=cfg.material.thickness,
+        scattering_coefficient=cfg.material.scattering_coefficient,
+        color=(0.95, 0.97, 1.0),
+    )
     scene.add(snow_material)
 
-    snow_objects: list[SceneObject] = []
-    box_idx = 0
+    snow_obj = scene.objects[SNOW_MESH_ID]
+    snow_obj.radio_material = snow_material
 
-    for pos in relevant_positions:
-        x, y, z = float(pos[0]), float(pos[1]), float(pos[2])
-
-        for level in range(cfg.levels):
-            z_offset = z + (level + 0.5) * cfg.box_size
-            name = f"snow_box_{box_idx}"
-            obj = _create_box_mesh(
-                name=name,
-                position=(x, y, z_offset),
-                size=cfg.box_size,
-                material=snow_material,
-            )
-            snow_objects.append(obj)
-            box_idx += 1
-
-    if snow_objects:
-        scene.edit(add=snow_objects)
-        logger.info(
-            "Added %d snow boxes to scene in %.3fs",
-            len(snow_objects),
-            time.perf_counter() - start,
-        )
-
-    return len(snow_objects)
-
+    logger.info("Applied snow radio material to mesh '%s'", SNOW_MESH_ID)
