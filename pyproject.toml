@@ -62,3 +62,11 @@ where = ["src"]
 testpaths = ["tests"]
 log_cli = true
 log_cli_level = "INFO"
+markers = [
+    "unit: Fast in-memory tests, no external dependencies",
+    "integration: Tests requiring files, scenes, or tmp data",
+    "regression: Full pipeline regression tests",
+    "presentation: Proof-of-concept outputs for papers/demos",
+    "slow: Tests that take significant time to run",
+]
+addopts = "-m 'unit'"

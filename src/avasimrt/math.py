@@ -39,3 +39,8 @@ def distance(node: tuple[float, float, float],
         (node[1] - anchor[1]) ** 2 +
         (node[2] - anchor[2]) ** 2
     )
+
+def mean_amp_in_db_from_cfr(cfr_slice: np.ndarray) -> float:
+    amps = np.abs(cfr_slice)
+    amps_db = 20 * np.log10(np.maximum(amps, 1e-12))
+    return float(amps_db.mean())
