@@ -64,6 +64,10 @@ class SimConfig:
     trajectory_plots_png: bool = False  # Save PNG visualizations
     trajectory_plots_html: bool = False  # Save interactive HTML visualizations
 
+    # Channelstate caching
+    channelstate_cache_dir: Path | None = None  # Load from this dir instead of computing
+    channelstate_save: bool = False  # Save channelstate after computation
+
     # Shared
     nodes: list[PositionConfig] = field(default_factory=list)
     anchors: list[PositionConfig] = field(default_factory=list)
@@ -99,6 +103,7 @@ class SimConfig:
         heightmap_npy = Path(heightmap_dict["npy"]) if "npy" in heightmap_dict else None
 
         trajectory_dict = get_dict(d, "trajectory", "trajectory") or {}
+        channelstate_dict = get_dict(d, "channelstate", "channelstate") or {}
 
         return cls(
             run_id=d.get("run_id"),
@@ -118,6 +123,9 @@ class SimConfig:
             trajectory_save=coerce_bool(trajectory_dict.get("save", False)),
             trajectory_plots_png=coerce_bool(trajectory_dict.get("plots_png", False)),
             trajectory_plots_html=coerce_bool(trajectory_dict.get("plots_html", False)),
+
+            channelstate_cache_dir=Path(channelstate_dict["cache_dir"]) if channelstate_dict.get("cache_dir") else None,
+            channelstate_save=coerce_bool(channelstate_dict.get("save", False)),
 
             nodes=[
                 PositionConfig.from_dict(a)

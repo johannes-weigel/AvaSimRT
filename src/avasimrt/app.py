@@ -13,6 +13,7 @@ from .motion.simulation import simulate_motion
 from .motion.cache import load_all_trajectories, save_all_trajectories
 from .motion.visualization import save_all_trajectory_visualizations
 from .channelstate.simulation import estimate_channelstate
+from .channelstate.cache import load_all_channelstates, save_all_channelstates
 from .reporting.csv import export_simresult_to_csv
 from .visualization.interactive import interactive_visualization_shell
 from .visualization.plots import save_all_visualizations
@@ -115,15 +116,23 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
             )
 
         # 2) CHANNELSTATE (Sionna RT)
-        
-        with log_step("CHANNELSTATE"):
-            all_results = estimate_channelstate(
-                cfg=config.channelstate,
-                anchors=anchors,
-                trajectories=trajectories,
-                scene_xml=scene_xml,
-                out_dir=out_dir
-            )
+        if config.channelstate_cache_dir is not None:
+            with log_step("CHANNELSTATE (from cache)"):
+                all_results = load_all_channelstates(
+                    config.channelstate_cache_dir, trajectories=trajectories
+                )
+        else:
+            with log_step("CHANNELSTATE"):
+                all_results = estimate_channelstate(
+                    cfg=config.channelstate,
+                    anchors=anchors,
+                    trajectories=trajectories,
+                    scene_xml=scene_xml,
+                    out_dir=out_dir
+                )
+                if config.channelstate_save:
+                    channelstate_dir = out_dir / "channelstate"
+                    save_all_channelstates(all_results, channelstate_dir)
 
         # 3) REPORTING (CSV export)
         csv_paths: list[Path] = []
