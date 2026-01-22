@@ -16,7 +16,9 @@ from sionna.rt import (
     Transmitter,
     load_scene,
     subcarrier_frequencies,
+    Paths
 )
+import sionna_vispy
 
 from avasimrt.preprocessing.result import ResolvedPosition
 from avasimrt.result import AnchorReading, AntennaReading, ComplexReading, Sample
@@ -42,6 +44,7 @@ def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
         itu_type="wet_ground",
         thickness=float("inf"),
         scattering_coefficient=0.3,
+        color=(0.45, 0.35, 0.25)
     )
     scene.add(terrain_material)
 
@@ -99,7 +102,7 @@ def _build_context(cfg: ChannelStateConfig, anchors: Sequence[ResolvedPosition],
     return _SionnaContext(scene=scene, solver=solver, rx=rx, txs=txs)
 
 
-def _solve_paths(ctx: _SionnaContext, cfg: ChannelStateConfig):
+def _solve_paths(ctx: _SionnaContext, cfg: ChannelStateConfig) -> Paths:
     return ctx.solver(
         scene=ctx.scene,
         max_depth=cfg.channel.reflection_depth,
@@ -156,8 +159,9 @@ def _render_if_enabled(
     cfg: ChannelStateConfig,
     step_idx: int,
     node_pos: mi.Point3f,
-    paths,
-    out_dir: Path
+    paths: Paths,
+    out_dir: Path,
+    debug: bool
 ) -> Path | None:
     r = cfg.render
     if not r.enabled or r.every_n_steps <= 0:
@@ -169,20 +173,28 @@ def _render_if_enabled(
     img_path = out_dir / f"scene_{step_idx}.png"
 
     cam = Camera(
-        position=mi.Point3f(
-            node_pos[0] + r.distance / 2,
-            node_pos[1] - r.distance * 2,
-            node_pos[2] + r.distance,
-        ),
+        position=mi.Point3f(r.camera_x, r.camera_y, r.camera_z),
         look_at=node_pos,
     )
 
+    a, _ = paths.cir()
+    # a is a list of TensorXf; check if num_paths dimension (index 4) is > 0
+    has_valid_paths = len(a) > 0 and len(a[0].shape) > 4 and a[0].shape[4] > 0
+
+    if debug:
+        with sionna_vispy.patch():
+            ctx.scene.preview(paths=paths if has_valid_paths else None)
+
+        sionna_vispy.get_canvas(ctx.scene).show()
+        sionna_vispy.get_canvas(ctx.scene).app.run()
+
     ctx.scene.render_to_file(
         camera=cam,
-        paths=paths,
+        paths=paths if has_valid_paths else None,
         filename=img_path.as_posix(),
         resolution=(r.width, r.height),
     )
+
     return img_path
 
 
@@ -234,7 +246,9 @@ def estimate_channelstate(
             ctx.rx.position = node_pos
 
             paths = _solve_paths(ctx, cfg)
-            img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths, out_dir=out_dir / node_id)
+            img = _render_if_enabled(ctx=ctx, cfg=cfg, step_idx=idx, node_pos=node_pos, paths=paths, 
+                                     out_dir=out_dir / node_id,
+                                     debug=cfg.debug)
 
             readings = _evaluate_cfr(paths=paths, cfg=cfg, anchors=anchors, node_snapshot=r0.node)
             out.append(Sample(timestamp=r0.timestamp, node=r0.node, readings=readings, image=img))

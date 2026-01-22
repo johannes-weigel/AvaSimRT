@@ -14,7 +14,7 @@ def test_with_nordkette_data(examples: Path) -> None:
 
     import matplotlib.pyplot as plt
 
-    assets_path = examples / "nordkette" / "assets"
+    assets_path = examples / "seegrube" / "assets"
 
     heightmap = np.load(assets_path / "heightmap.npy")
 

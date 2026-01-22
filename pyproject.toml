@@ -29,6 +29,7 @@ dependencies = [
   "python-dotenv",
   "Plotly",
   "shapely",
+  "sionna_vispy[recommended]",
 ]
 
 classifiers = [

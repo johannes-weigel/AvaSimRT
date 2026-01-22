@@ -98,18 +98,18 @@ class ChannelConfig:
 class RenderConfig:
     enabled: bool = False
     every_n_steps: int = 0
-    width: int = 650
-    height: int = 500
-    distance: float = 6.0
+    width: int = 640
+    height: int = 360
+    camera_x: float = 0.0
+    camera_y: float = 0.0
+    camera_z: float = 100.0
 
     def __post_init__(self) -> None:
         if self.width <= 0 or self.height <= 0:
             raise ValueError("width/height must be > 0")
-        if self.distance <= 0:
-            raise ValueError("distance must be > 0")
         if self.every_n_steps < 0:
             raise ValueError("every_n_steps must be >= 0")
-    
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any] | None) -> "RenderConfig":
         d = dict(data or {})
@@ -120,7 +120,9 @@ class RenderConfig:
             every_n_steps=coerce_int(d.get("every_n_steps", defaults.every_n_steps)),
             width=coerce_int(d.get("width", defaults.width)),
             height=coerce_int(d.get("height", defaults.height)),
-            distance=coerce_float(d.get("distance", defaults.distance)),
+            camera_x=coerce_float(d.get("camera_x", defaults.camera_x)),
+            camera_y=coerce_float(d.get("camera_y", defaults.camera_y)),
+            camera_z=coerce_float(d.get("camera_z", defaults.camera_z)),
         )
 
 
