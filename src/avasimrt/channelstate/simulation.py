@@ -217,6 +217,8 @@ def _evaluate_cfr(paths, *,
     cfr = h_raw[0][:, :, 0, 0, :]
     cfr = np.transpose(cfr, (1, 0, 2))
 
+    # NOTE: For more realistic results, distance could be derived from the shortest
+    # path delay via paths.cir(): distance = min(tau) * SPEED_OF_LIGHT
     distances = np.array([distance(node_pos, a[1]) for a in anchors], dtype=np.float64)
 
     return cfr, distances
