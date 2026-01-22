@@ -371,30 +371,29 @@ def prepare_snow_scene(
     return snow_scene_xml, n_spheres
 
 
-def apply_snow_material(scene: Scene, cfg: "SnowConfig") -> None:
-    """Apply the configured radio material to the snow mesh after scene loading.
+class Snow:
 
-    Args:
-        scene: Loaded Sionna scene
-        cfg: Snow configuration
-    """
-    if not cfg.enabled:
-        return
+    def __init__(self, 
+                type: str,
+                thickness: float,
+                scattering_coef: float,
+                color: tuple[float, float, float] = (0.95, 0.97, 1.0)):
+        self._material = ITURadioMaterial(
+            name="avasimrt_snow",
+            itu_type=type,
+            thickness=thickness,
+            scattering_coefficient=scattering_coef,
+            color=color,
+        )
 
-    if SNOW_MESH_ID not in scene.objects:
-        logger.warning("Snow mesh '%s' not found in scene objects", SNOW_MESH_ID)
-        return
+    def apply_material(self, scene: Scene) -> None:
+        if SNOW_MESH_ID not in scene.objects:
+            logger.warning("Snow mesh '%s' not found in scene objects", SNOW_MESH_ID)
+            return
 
-    snow_material = ITURadioMaterial(
-        name="avasimrt_snow",
-        itu_type=cfg.material.itu_type,
-        thickness=cfg.material.thickness,
-        scattering_coefficient=cfg.material.scattering_coefficient,
-        color=(0.95, 0.97, 1.0),
-    )
-    scene.add(snow_material)
+        material = self._material
 
-    snow_obj = scene.objects[SNOW_MESH_ID]
-    snow_obj.radio_material = snow_material
+        scene.add(material)
+        scene.objects[SNOW_MESH_ID].radio_material = material
 
-    logger.info("Applied snow radio material to mesh '%s'", SNOW_MESH_ID)
+        logger.info("Applied snow radio material to mesh '%s'", SNOW_MESH_ID)

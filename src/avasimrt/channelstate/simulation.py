@@ -27,7 +27,7 @@ from avasimrt.preprocessing.result import ResolvedPosition
 from avasimrt.result import AnchorReading, AntennaReading, ComplexReading, Sample
 from avasimrt.math import distance, mean_db_from_values
 from .config import ChannelStateConfig
-from .snow import prepare_snow_scene, apply_snow_material, SNOW_MESH_ID, SnowConfig
+from .snow import prepare_snow_scene, Snow, SNOW_MESH_ID
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class ChannelStateResult:
 
 def _setup_scene(*, 
                  scene_src: Path | str | None,
-                 snow: SnowConfig | None,
+                 snow: Snow | None,
                  freq_center: float,
                  sc_num: float,
                  sc_spacing: float) -> Scene:
@@ -82,9 +82,8 @@ def _setup_scene(*,
         logger.info("Assigning terrain radio material to object: %s", obj_name)
         obj.radio_material = terrain_material
 
-    # Apply snow material if snow mesh is present
     if (snow):
-        apply_snow_material(scene, snow)
+        snow.apply_material(scene)
 
     scene.tx_array = PlanarArray(
         num_rows=1,
@@ -113,9 +112,10 @@ def _build_context(
     anchors: Sequence[TransmitterConfig],
     *,
     scene_src: Path | str | None,
+    snow: Snow | None,
 ) -> _SionnaContext:
     scene = _setup_scene(scene_src=scene_src,
-                         snow=cfg.snow,
+                         snow=snow,
                          freq_center=cfg.channel.freq_center,
                          sc_num=cfg.channel.sc_num,
                          sc_spacing=cfg.channel.sc_spacing)
@@ -268,6 +268,8 @@ def estimate_channelstate(
 
     # Prepare snow scene if enabled (generates PLY and modified XML)
     effective_scene_xml = scene_xml
+
+    snow = None
     if cfg.snow.enabled and heightmap is not None:
         nodes = [[sample.node for sample in samples] for samples in trajectories.values()]
         effective_scene_xml, n_snow = prepare_snow_scene(
@@ -280,7 +282,10 @@ def estimate_channelstate(
         )
         logger.info("Snow scene prepared with %d spheres", n_snow)
 
-    ctx = _build_context(cfg, [(a.id, (a.x, a.y, a.z), a.size) for a in anchors], scene_src=effective_scene_xml)
+        snow = Snow(cfg.snow.material.itu_type, cfg.snow.material.thickness, cfg.snow.material.scattering_coefficient)
+
+    ctx = _build_context(cfg, [(a.id, (a.x, a.y, a.z), a.size) for a in anchors], scene_src=effective_scene_xml,
+                         snow=snow)
 
     for node_id, motion_results in trajectories.items():
         if not motion_results:
