@@ -61,9 +61,8 @@ class ChannelStateResult:
 def _setup_scene(*, 
                  scene_src: Path | str | None,
                  snow: Snow | None,
-                 freq_center: float,
-                 sc_num: float,
-                 sc_spacing: float) -> Scene:
+                 freq_center: float | None,
+                 bandwidth: float | None) -> Scene:
     if (scene_src):
         scene = load_scene(scene_src.as_posix() 
                            if isinstance(scene_src, Path) 
@@ -96,8 +95,11 @@ def _setup_scene(*,
                                  pattern="dipole",
                                  polarization="cross")
 
-    scene.frequency = freq_center
-    scene.bandwidth = sc_num * sc_spacing
+    if (freq_center):
+        scene.frequency = freq_center
+    if (bandwidth):
+        scene.bandwidth = bandwidth
+    
     return scene
 
 
@@ -105,14 +107,12 @@ def _build_context(*,
                    anchors: Sequence[TransmitterConfig],
                    scene_src: Path | str | None,
                    snow: Snow | None,
-                   freq_center: float,
-                   sc_num: float,
-                   sc_spacing: float) -> _SionnaContext:
+                   freq_center: float | None,
+                   bandwidth: float | None) -> _SionnaContext:
     scene = _setup_scene(scene_src=scene_src,
                          snow=snow,
                          freq_center=freq_center,
-                         sc_num=sc_num,
-                         sc_spacing=sc_spacing)
+                         bandwidth=bandwidth)
 
     txs: list[Transmitter] = []
     for id, pos, size in anchors:
@@ -279,8 +279,7 @@ def estimate_channelstate(
                          scene_src=effective_scene_xml,
                          snow=snow,
                          freq_center=cfg.channel.freq_center,
-                         sc_num=cfg.channel.sc_num,
-                         sc_spacing=cfg.channel.sc_spacing)
+                         bandwidth=cfg.channel.sc_num * cfg.channel.sc_spacing)
 
     for node_id, motion_results in trajectories.items():
         if not motion_results:
