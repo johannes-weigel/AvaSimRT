@@ -31,6 +31,9 @@ from .snow import prepare_snow_scene, apply_snow_material, SNOW_MESH_ID
 
 logger = logging.getLogger(__name__)
 
+Position3D = tuple[float, float, float]
+TransmitterConfig = tuple[str, Position3D, float]
+
 
 @dataclass(slots=True)
 class _SionnaContext:
@@ -101,22 +104,18 @@ def _setup_scene(cfg: ChannelStateConfig, *, scene_src: Path | str | None) -> Sc
 
 def _build_context(
     cfg: ChannelStateConfig,
-    anchors: Sequence[ResolvedPosition],
+    anchors: Sequence[TransmitterConfig],
     *,
     scene_src: Path | str | None,
 ) -> _SionnaContext:
     scene = _setup_scene(cfg, scene_src=scene_src)
 
     txs: list[Transmitter] = []
-    for a in anchors:
-        if a.z is None:
-            raise ValueError(
-                f"Anchor {a.id} has z=None. Resolve anchor heights in motion step before channelstate."
-            )
+    for id, pos, size in anchors:
         tx = Transmitter(
-            name=a.id,
-            position=mi.Point3f(a.x, a.y, a.z),
-            display_radius=a.size,
+            name=id,
+            position=mi.Point3f(pos),
+            display_radius=size,
         )
         scene.add(tx)
         txs.append(tx)
@@ -271,7 +270,7 @@ def estimate_channelstate(
         )
         logger.info("Snow scene prepared with %d spheres", n_snow)
 
-    ctx = _build_context(cfg, anchors, scene_src=effective_scene_xml)
+    ctx = _build_context(cfg, [(a.id, (a.x, a.y, a.z), a.size) for a in anchors], scene_src=effective_scene_xml)
 
     for node_id, motion_results in trajectories.items():
         if not motion_results:
