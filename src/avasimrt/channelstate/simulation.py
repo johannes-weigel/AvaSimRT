@@ -79,7 +79,9 @@ class _SionnaContext:
         self.scene.render_to_file(camera=cam,
                                   paths=paths,
                                   filename=file_path.as_posix(),
-                                  resolution=resolution)    
+                                  resolution=resolution,
+                                  # no oriented devices
+                                  show_orientations=False)
     
     def render_if_enabled(self, *,
                           cfg: ChannelStateConfig,
@@ -188,14 +190,18 @@ def _build_context(*,
     for id, pos, size in anchors:
         tx = Transmitter(name=id,
                          position=mi.Point3f(pos),
-                         display_radius=size)
+                         display_radius=size,
+                         # color picked from image of anchor
+                         color=(0.180, 0.282, 0.388))
         scene.add(tx)
         txs.append(tx)
 
     # Placeholder - gets updated for each trajectory / node configuration
     rx = Receiver(name="node",
                   position=mi.Point3f(0, 0, 0),
-                  display_radius=1.0)
+                  display_radius=1.0,
+                  # color picked from image of node
+                  color=(1, 0.308, 0.1))
     scene.add(rx)
 
     solver = PathSolver()
