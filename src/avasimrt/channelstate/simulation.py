@@ -35,6 +35,13 @@ Position3D = tuple[float, float, float]
 TransmitterConfig = tuple[str, Position3D, float]
 
 
+# Infinite thickness to prevent any transmition though mountain
+terrain_material = ITURadioMaterial(name="avasimrt_terrain",
+                                    itu_type="wet_ground",
+                                    thickness=float("inf"),
+                                    scattering_coefficient=0.3,
+                                    color=(0.45, 0.35, 0.25))
+
 @dataclass(slots=True)
 class _SionnaContext:
     scene: Scene
@@ -58,21 +65,12 @@ def _setup_scene(*,
                  sc_num: float,
                  sc_spacing: float) -> Scene:
     if (scene_src):
-        scene = load_scene(
-            scene_src.as_posix() 
-            if isinstance(scene_src, Path) 
-            else scene_src
-        )
+        scene = load_scene(scene_src.as_posix() 
+                           if isinstance(scene_src, Path) 
+                           else scene_src)
     else:
         scene = load_scene()
 
-    terrain_material = ITURadioMaterial(
-        name="avasimrt_terrain",
-        itu_type="wet_ground",
-        thickness=float("inf"),
-        scattering_coefficient=0.3,
-        color=(0.45, 0.35, 0.25)
-    )
     scene.add(terrain_material)
 
     for obj_name, obj in scene.objects.items():
