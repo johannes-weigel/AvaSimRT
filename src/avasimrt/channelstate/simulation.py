@@ -209,11 +209,9 @@ def _build_context(*,
 
 
 def _evaluate_cfr(paths, *,
-                  sc_num: int,
-                  sc_spacing: float,
+                  freqs,
                   anchors: Sequence[TransmitterConfig],
                   node_pos: Position3D) -> list[AnchorReading]:
-    freqs = subcarrier_frequencies(sc_num, sc_spacing)
     h_raw = paths.cfr(frequencies=freqs, out_type="numpy", normalize_delays=False)
 
     readings: list[AnchorReading] = []
@@ -300,6 +298,8 @@ def estimate_channelstate(
                          bandwidth=cfg.channel.sc_num * cfg.channel.sc_spacing,
                          reflection_depth=cfg.channel.reflection_depth, seed=cfg.channel.seed)
 
+    freqs = subcarrier_frequencies(cfg.channel.sc_num, cfg.channel.sc_spacing)
+
     for node_id, motion_results in trajectories.items():
         if not motion_results:
             logger.warning("ChannelState: node '%s' has no motion results, skipping", node_id)
@@ -328,8 +328,9 @@ def estimate_channelstate(
                                      debug=cfg.debug)
 
             readings = _evaluate_cfr(paths, 
-                                     sc_num=cfg.channel.sc_num,sc_spacing=cfg.channel.sc_spacing,
-                                     anchors=unpacked_anchors, node_pos=r0.node.position)
+                                     freqs=freqs,
+                                     anchors=unpacked_anchors, 
+                                     node_pos=r0.node.position)
             out.append(Sample(timestamp=r0.timestamp, node=r0.node, readings=readings, image=img))
 
             if idx % log_every == 0:
