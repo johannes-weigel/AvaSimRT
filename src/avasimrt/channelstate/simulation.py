@@ -83,7 +83,7 @@ def _setup_scene(cfg: ChannelStateConfig, *, scene_xml: Path) -> Scene:
     return scene
 
 
-def _build_context(cfg: ChannelStateConfig, anchors: Sequence[ResolvedPosition], *, rx_radius: float, scene_xml: Path) -> _SionnaContext:
+def _build_context(cfg: ChannelStateConfig, anchors: Sequence[ResolvedPosition], *, scene_xml: Path) -> _SionnaContext:
     scene = _setup_scene(cfg, scene_xml=scene_xml)
 
     txs: list[Transmitter] = []
@@ -103,7 +103,7 @@ def _build_context(cfg: ChannelStateConfig, anchors: Sequence[ResolvedPosition],
     rx = Receiver(
         name="node",
         position=mi.Point3f(0, 0, 0),
-        display_radius=rx_radius,
+        display_radius=1.0,  # default, updated per trajectory
     )
     scene.add(rx)
 
@@ -235,6 +235,8 @@ def estimate_channelstate(
     all_results: dict[str, list[Sample]] = {}
     durations: dict[str, float] = {}
 
+    ctx = _build_context(cfg, anchors, scene_xml=scene_xml)
+
     for node_id, motion_results in trajectories.items():
         if not motion_results:
             logger.warning("ChannelState: node '%s' has no motion results, skipping", node_id)
@@ -242,10 +244,9 @@ def estimate_channelstate(
 
         node_start = time.perf_counter()
         rx_radius = motion_results[0].node.size
+        ctx.rx.display_radius = rx_radius
 
         logger.info("ChannelState: processing trajectory for node '%s' (rx_radius=%.3f)", node_id, rx_radius)
-
-        ctx = _build_context(cfg, anchors, rx_radius=rx_radius, scene_xml=scene_xml)
 
         total = len(motion_results)
         log_every = max(1, total // 20)
