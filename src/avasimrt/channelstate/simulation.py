@@ -211,35 +211,42 @@ def _build_context(*,
 def _evaluate_cfr(paths, *,
                   freqs,
                   anchors: Sequence[TransmitterConfig],
-                  node_pos: Position3D) -> list[AnchorReading]:
+                  node_pos: Position3D) -> tuple[np.ndarray, np.ndarray]:
     h_raw = paths.cfr(frequencies=freqs, out_type="numpy", normalize_delays=False)
 
+    cfr = h_raw[0][:, :, 0, 0, :]
+    cfr = np.transpose(cfr, (1, 0, 2))
+
+    distances = np.array([distance(node_pos, a[1]) for a in anchors], dtype=np.float64)
+
+    return cfr, distances
+
+
+def _cfr_to_readings(cfr: np.ndarray,
+                     distances: np.ndarray,
+                     freqs: np.ndarray,
+                     anchor_ids: Sequence[str],) -> list[AnchorReading]:
+    antenna_labels = ("H", "V")
     readings: list[AnchorReading] = []
 
-    for i_anchor, anchor in enumerate(anchors):
+    for a, anchor_id in enumerate(anchor_ids):
+        antenna_values: list[AntennaReading] = []
 
-        def values_from_index(i_pol: int) -> list[ComplexReading]:
-            h = h_raw[0][i_pol][i_anchor][0][0]
-            return [
-                ComplexReading(freq=float(freqs[c_id]), real=float(c.real), imag=float(c.imag))
-                for c_id, c in enumerate(h)
+        for p, label in enumerate(antenna_labels):
+            freq_readings = [
+                ComplexReading(freq=float(freqs[f]), real=float(cfr[a, p, f].real), imag=float(cfr[a, p, f].imag))
+                for f in range(len(freqs))
             ]
-
-        values_h = values_from_index(0)
-        values_v = values_from_index(1)
+            antenna_values.append(
+                AntennaReading(label=label, mean_db=mean_db_from_values(freq_readings), frequencies=freq_readings)
+            )
 
         readings.append(
-            AnchorReading(
-                anchor_id=anchor[0],
-                distance=distance(node_pos, anchor[1]),
-                values=[
-                    AntennaReading(label="H", mean_db=mean_db_from_values(values_h), frequencies=values_h),
-                    AntennaReading(label="V", mean_db=mean_db_from_values(values_v), frequencies=values_v),
-                ],
-            )
+            AnchorReading(anchor_id=anchor_id, distance=float(distances[a]), values=antenna_values)
         )
 
     return readings
+
 
 
 def estimate_channelstate(
@@ -327,10 +334,11 @@ def estimate_channelstate(
                                      out_dir=out_dir / node_id,
                                      debug=cfg.debug)
 
-            readings = _evaluate_cfr(paths, 
-                                     freqs=freqs,
-                                     anchors=unpacked_anchors, 
-                                     node_pos=r0.node.position)
+            cfr, dists = _evaluate_cfr(paths,
+                                        freqs=freqs,
+                                        anchors=unpacked_anchors,
+                                        node_pos=r0.node.position)
+            readings = _cfr_to_readings(cfr, dists, freqs, [a[0] for a in unpacked_anchors])
             out.append(Sample(timestamp=r0.timestamp, node=r0.node, readings=readings, image=img))
 
             if idx % log_every == 0:
