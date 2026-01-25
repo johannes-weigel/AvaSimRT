@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-SNOW_MESH_ID = "snow_mesh"
-SNOW_MATERIAL_ID = "mat-itu_wet_ground"
+SNOW_SPHERE_PREFIX = "snow_sphere_"
 
 
 def _build_alpha_shape(points: np.ndarray, alpha: float, margin: float) -> Polygon:
@@ -139,178 +138,102 @@ def extract_relevant_heightmap(
     return filtered_heightmap, mask
 
 
-def _generate_sphere_mesh(n_lat: int = 8, n_lon: int = 16) -> tuple[np.ndarray, np.ndarray]:
-    """Generate a unit sphere mesh centered at origin.
+def create_sphere_ply(filepath: Path, radius: float, n_lat: int = 16, n_lon: int = 32) -> None:
+    """Create a PLY file containing a sphere mesh with the given radius.
 
-    Returns:
-        vertices: (n_vertices, 3) array of vertex positions
-        faces: (n_faces, 3) array of vertex indices for each triangle
+    Args:
+        filepath: Path where the PLY file will be written.
+        radius: Radius of the sphere.
+        n_lat: Number of latitude divisions.
+        n_lon: Number of longitude divisions.
     """
     vertices = []
-    faces = []
-
-    # Generate vertices
     for i in range(n_lat + 1):
-        lat = np.pi * i / n_lat - np.pi / 2  # -pi/2 to pi/2
+        lat = np.pi * i / n_lat - np.pi / 2
         for j in range(n_lon):
             lon = 2 * np.pi * j / n_lon
-            x = np.cos(lat) * np.cos(lon)
-            y = np.cos(lat) * np.sin(lon)
-            z = np.sin(lat)
+            x = radius * np.cos(lat) * np.cos(lon)
+            y = radius * np.cos(lat) * np.sin(lon)
+            z = radius * np.sin(lat)
             vertices.append([x, y, z])
 
     vertices = np.array(vertices, dtype=np.float32)
 
-    # Generate faces
+    faces = []
     for i in range(n_lat):
         for j in range(n_lon):
             v0 = i * n_lon + j
             v1 = i * n_lon + (j + 1) % n_lon
             v2 = (i + 1) * n_lon + j
             v3 = (i + 1) * n_lon + (j + 1) % n_lon
-
             faces.append([v0, v2, v1])
             faces.append([v1, v2, v3])
 
     faces = np.array(faces, dtype=np.int32)
-    return vertices, faces
 
-
-def _generate_combined_snow_ply(
-    positions: np.ndarray,
-    box_size: float,
-    levels: int,
-    output_path: Path,
-) -> int:
-    """Generate a PLY file with spheres at all snow positions.
-
-    Args:
-        positions: (n, 3) array of (x, y, z) positions
-        box_size: Size/diameter of each snow sphere
-        levels: Number of vertical levels of snow
-        output_path: Path to write the PLY file
-
-    Returns:
-        Total number of spheres created
-    """
-    start = time.perf_counter()
-
-    # Generate base sphere geometry
-    base_vertices, base_faces = _generate_sphere_mesh(n_lat=6, n_lon=12)
-    n_base_verts = len(base_vertices)
-    n_base_faces = len(base_faces)
-
-    total_spheres = len(positions) * levels
-    total_vertices = total_spheres * n_base_verts
-    total_faces = total_spheres * n_base_faces
-
-    logger.info("Generating snow PLY: %d spheres (%d positions x %d levels), %d vertices, %d faces",
-                total_spheres, len(positions), levels, total_vertices, total_faces)
-
-    # Pre-allocate arrays
-    all_vertices = np.zeros((total_vertices, 3), dtype=np.float32)
-    all_faces = np.zeros((total_faces, 3), dtype=np.int32)
-
-    sphere_idx = 0
-    log_interval = max(1, len(positions) // 10)
-    radius = box_size / 2.0
-
-    for i, pos in enumerate(positions):
-        x, y, z = float(pos[0]), float(pos[1]), float(pos[2])
-
-        for level in range(levels):
-            z_offset = z + (level + 0.5) * box_size
-
-            # Transform vertices for this sphere
-            vert_start = sphere_idx * n_base_verts
-            vert_end = vert_start + n_base_verts
-            all_vertices[vert_start:vert_end] = base_vertices * radius + [x, y, z_offset]
-
-            # Add faces with offset vertex indices
-            face_start = sphere_idx * n_base_faces
-            face_end = face_start + n_base_faces
-            all_faces[face_start:face_end] = base_faces + vert_start
-
-            sphere_idx += 1
-
-        if i % log_interval == 0:
-            progress = (i / len(positions)) * 100
-            logger.info("Snow PLY generation progress: %.0f%% (%d/%d positions)", progress, i, len(positions))
-
-    # Write PLY file
-    logger.info("Writing snow PLY to %s", output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(output_path, 'wb') as f:
-        # Header
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    with open(filepath, "wb") as f:
         header = f"""ply
 format binary_little_endian 1.0
-element vertex {total_vertices}
+element vertex {len(vertices)}
 property float x
 property float y
 property float z
-element face {total_faces}
+element face {len(faces)}
 property list uchar int vertex_indices
 end_header
 """
-        f.write(header.encode('ascii'))
-
-        # Vertices
-        all_vertices.tofile(f)
-
-        # Faces (each face: 1 byte count + 3 int indices)
-        for face in all_faces:
+        f.write(header.encode("ascii"))
+        vertices.tofile(f)
+        for face in faces:
             f.write(np.uint8(3).tobytes())
             f.write(face.tobytes())
 
-    elapsed = time.perf_counter() - start
-    logger.info("Snow PLY generated in %.3fs: %d spheres, %.2f MB",
-                elapsed, total_spheres, output_path.stat().st_size / 1024 / 1024)
 
-    return total_spheres
-
-
-def _inject_snow_into_xml(
-    scene_xml: Path,
-    snow_ply_path: Path,
-    output_xml: Path,
-) -> None:
-    """Inject snow mesh and material into scene XML.
+def create_scene_with_snow(
+    xml_path: Path,
+    meshes_dir: Path,
+    radius: float,
+    positions: np.ndarray,
+) -> Path:
+    """Create a new scene XML with snow spheres added at multiple positions.
 
     Args:
-        scene_xml: Original scene XML path
-        snow_ply_path: Path to the snow PLY mesh
-        output_xml: Path to write the modified XML
+        xml_path: Path to the original scene XML file.
+        meshes_dir: Directory where the Snow.ply mesh will be created.
+        radius: Radius of the snow sphere.
+        positions: Array of shape (n, 3) with (x, y, z) coordinates,
+            as returned by extract_relevant_heightmap.
+
+    Returns:
+        Path to the newly created XML file with "-with_snow" suffix.
     """
-    tree = ET.parse(scene_xml)
+    ply_path = meshes_dir / "Snow.ply"
+    create_sphere_ply(ply_path, radius)
+
+    tree = ET.parse(xml_path)
     root = tree.getroot()
 
-    # Add snow material (using a default bsdf, will be replaced with ITURadioMaterial after loading)
-    snow_bsdf = ET.SubElement(root, "bsdf", {"type": "twosided", "id": SNOW_MATERIAL_ID, "name": SNOW_MATERIAL_ID})
-    inner_bsdf = ET.SubElement(snow_bsdf, "bsdf", {"type": "principled", "name": "bsdf"})
-    ET.SubElement(inner_bsdf, "rgb", {"value": "0.95 0.97 1.0", "name": "base_color"})
-    ET.SubElement(inner_bsdf, "float", {"name": "roughness", "value": "0.8"})
+    # Find existing bsdf to reference
+    bsdf = root.find("bsdf")
+    bsdf_id = bsdf.get("id") if bsdf is not None else None
 
-    # Add snow mesh shape
-    # Make the path relative to the output XML location
-    relative_ply_path = snow_ply_path.relative_to(output_xml.parent)
+    for i, position in enumerate(positions):
+        shape_id = f"snow_{i}"
+        snow_shape = ET.SubElement(root, "shape", {"type": "ply", "id": shape_id, "name": shape_id})
+        ET.SubElement(snow_shape, "string", {"name": "filename", "value": "meshes/Snow.ply"})
 
-    snow_shape = ET.SubElement(root, "shape", {"type": "ply", "id": SNOW_MESH_ID, "name": SNOW_MESH_ID})
-    ET.SubElement(snow_shape, "string", {"name": "filename", "value": str(relative_ply_path)})
-    ET.SubElement(snow_shape, "boolean", {"name": "face_normals", "value": "true"})
-    ET.SubElement(snow_shape, "ref", {"id": SNOW_MATERIAL_ID, "name": "bsdf"})
+        if bsdf_id:
+            ET.SubElement(snow_shape, "ref", {"id": bsdf_id, "name": "bsdf"})
 
-    # Write modified XML
-    tree.write(output_xml, encoding="unicode", xml_declaration=False)
+        transform = ET.SubElement(snow_shape, "transform", {"name": "to_world"})
+        ET.SubElement(transform, "translate", {"x": str(float(position[0])), "y": str(float(position[1])), "z": str(float(position[2]))})
 
-    # Re-read and add XML declaration + scene version
-    with open(output_xml, 'r') as f:
-        content = f.read()
+    output_path = xml_path.with_stem(xml_path.stem + "-with_snow")
+    tree.write(output_path, encoding="unicode", xml_declaration=False)
 
-    with open(output_xml, 'w') as f:
-        f.write(content)
+    return output_path
 
-    logger.info("Injected snow mesh into XML: %s", output_xml)
 
 
 def prepare_snow_scene(
@@ -354,21 +277,16 @@ def prepare_snow_scene(
         logger.warning("No relevant heightmap positions found for snow placement")
         return scene_xml, 0
 
-    # Generate snow PLY
-    snow_ply_path = out_dir / "meshes" / "snow_mesh.ply"
-    n_spheres = _generate_combined_snow_ply(
-        positions=relevant_positions,
-        box_size=cfg.box_size,
-        levels=cfg.levels,
-        output_path=snow_ply_path,
-    )
-
-    # Inject into XML
+    # Inject individual snow spheres into XML
     snow_scene_xml = out_dir / "scene_with_snow.xml"
-    _inject_snow_into_xml(scene_xml, snow_ply_path, snow_scene_xml)
+    meshes_dir = out_dir / "meshes"
+    snow_scene_xml = create_scene_with_snow(positions=relevant_positions,
+                                       radius=cfg.box_size,
+                                       xml_path=scene_xml,
+                                       meshes_dir=meshes_dir)
 
     logger.info("Snow scene prepared in %.3fs", time.perf_counter() - start)
-    return snow_scene_xml, n_spheres
+    return snow_scene_xml, 42
 
 
 class Snow:
@@ -387,13 +305,16 @@ class Snow:
         )
 
     def apply_material(self, scene: Scene) -> None:
-        if SNOW_MESH_ID not in scene.objects:
-            logger.warning("Snow mesh '%s' not found in scene objects", SNOW_MESH_ID)
+        snow_objects = [name for name in scene.objects if name.startswith(SNOW_SPHERE_PREFIX)]
+
+        if not snow_objects:
+            logger.warning("No snow spheres found in scene (prefix='%s')", SNOW_SPHERE_PREFIX)
             return
 
         material = self._material
-
         scene.add(material)
-        scene.objects[SNOW_MESH_ID].radio_material = material
 
-        logger.info("Applied snow radio material to mesh '%s'", SNOW_MESH_ID)
+        for obj_name in snow_objects:
+            scene.objects[obj_name].radio_material = material
+
+        logger.info("Applied snow radio material to %d snow spheres", len(snow_objects))

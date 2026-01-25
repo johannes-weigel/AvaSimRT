@@ -27,7 +27,7 @@ from avasimrt.preprocessing.result import ResolvedPosition
 from avasimrt.result import AnchorReading, AntennaReading, ComplexReading, Sample
 from avasimrt.math import distance, mean_db_from_values
 from .config import ChannelStateConfig
-from .snow import prepare_snow_scene, Snow, SNOW_MESH_ID
+from .snow import prepare_snow_scene, Snow, SNOW_SPHERE_PREFIX
 
 logger = logging.getLogger(__name__)
 
@@ -136,14 +136,15 @@ def _setup_scene(*,
     if (scene_src):
         scene = load_scene(scene_src.as_posix() 
                            if isinstance(scene_src, Path) 
-                           else scene_src)
+                           else scene_src,
+                           merge_shapes=False)
     else:
         scene = load_scene()
 
     scene.add(terrain_material)
 
     for obj_name, obj in scene.objects.items():
-        if obj_name == SNOW_MESH_ID:
+        if obj_name.startswith(SNOW_SPHERE_PREFIX):
             continue
         logger.info("Assigning terrain radio material to object: %s", obj_name)
         obj.radio_material = terrain_material
