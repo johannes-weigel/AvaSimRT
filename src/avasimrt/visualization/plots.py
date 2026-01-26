@@ -200,7 +200,7 @@ def plot_mean_db_and_distance_over_time(
     ax_db.set_xlabel("Time [s]")
     ax_db.set_ylabel("Mean amplitude [dB]")
     ax_dist.set_ylabel("Distance [m]")
-    ax_db.set_title("Mean dB and distance over time for all anchors")
+    ax_db.set_title("Mean amplitude and distance over time for all anchors")
 
     handles_db, labels_db = ax_db.get_legend_handles_labels()
     handles_dist, labels_dist = ax_dist.get_legend_handles_labels()
