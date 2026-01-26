@@ -25,8 +25,6 @@ nodes:
 
 trajectory:
   save: true
-  plots_png: true
-  plots_html: true
 
 motion:
   time:
