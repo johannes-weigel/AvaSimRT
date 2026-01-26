@@ -180,8 +180,8 @@ for res in $CHANNELSTATE_RESOLUTIONS; do
             # Copy channelstate folder with suffix
             if [ -d "$output_dir/channelstate" ]; then
                 mkdir -p "$ASSETS_DIR/channelstate-${res}"
-                cp -r "$output_dir/channelstate/"* "$ASSETS_DIR/channelstate-${res}/"
-                echo "  Copied: channelstate-${res}/"
+                cp -r "$output_dir/channelstate/"* "$ASSETS_DIR/channelstate-without_snow-${res}/"
+                echo "  Copied: channelstate-without_snow-${res}/"
             else
                 echo "  Warning: channelstate folder not found in $output_dir"
             fi
