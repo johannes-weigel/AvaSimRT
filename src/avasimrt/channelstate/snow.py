@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-SNOW_SPHERE_PREFIX = "snow_sphere_"
+SNOW_SPHERE_PREFIX = "snow_"
 
 
 def _build_alpha_shape(points: np.ndarray, alpha: float, margin: float) -> Polygon:
@@ -286,21 +286,25 @@ def prepare_snow_scene(
                                        meshes_dir=meshes_dir)
 
     logger.info("Snow scene prepared in %.3fs", time.perf_counter() - start)
-    return snow_scene_xml, 42
+    return snow_scene_xml, len(relevant_positions)
 
 
 class Snow:
 
     def __init__(self, 
-                type: str,
-                thickness: float,
-                scattering_coef: float,
-                color: tuple[float, float, float] = (0.95, 0.97, 1.0)):
+                 type: str | None = None,
+                 thickness: float | None = None,
+                 scattering_coef: float | None = None,
+                 relative_permittivity: float | None = None,
+                 conductivity: float | None = None,
+                 color: tuple[float, float, float] = (0.95, 0.97, 1.0)):
         self._material = ITURadioMaterial(
             name="avasimrt_snow",
-            itu_type=type,
-            thickness=thickness,
-            scattering_coefficient=scattering_coef,
+            itu_type=type if type else "concrete",
+            relative_permittivity=relative_permittivity if relative_permittivity else 1.4,
+            conductivity=conductivity if conductivity else 1e5,
+            thickness=thickness if thickness else 1,
+            scattering_coefficient=scattering_coef if scattering_coef else 0.0,
             color=color,
         )
 

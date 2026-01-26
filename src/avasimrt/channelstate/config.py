@@ -7,40 +7,6 @@ from avasimrt.helpers import coerce_int, coerce_float, coerce_bool
 
 
 @dataclass(frozen=True, slots=True)
-class SnowMaterialConfig:
-    """Radio material properties for snow objects."""
-
-    itu_type: str = "wet_ground"
-    thickness: float = 0.1
-    scattering_coefficient: float = 0.5
-
-    def __post_init__(self) -> None:
-        if self.thickness <= 0:
-            raise ValueError("thickness must be > 0")
-        if not 0 <= self.scattering_coefficient <= 1:
-            raise ValueError("scattering_coefficient must be in [0, 1]")
-
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any] | None) -> "SnowMaterialConfig":
-        d = dict(data or {})
-        defaults = cls()
-        return cls(
-            itu_type=str(d.get("itu_type", defaults.itu_type)),
-            thickness=coerce_float(d.get("thickness", defaults.thickness)),
-            scattering_coefficient=coerce_float(
-                d.get("scattering_coefficient", defaults.scattering_coefficient)
-            ),
-        )
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "itu_type": self.itu_type,
-            "thickness": self.thickness,
-            "scattering_coefficient": self.scattering_coefficient,
-        }
-
-
-@dataclass(frozen=True, slots=True)
 class SnowConfig:
     """Configuration for snow layer in channel simulation."""
 
@@ -48,7 +14,6 @@ class SnowConfig:
     box_size: float = 1.0
     levels: int = 1
     margin: float = 10.0
-    material: SnowMaterialConfig = SnowMaterialConfig()
 
     def __post_init__(self) -> None:
         if self.box_size <= 0:
@@ -67,7 +32,6 @@ class SnowConfig:
             box_size=coerce_float(d.get("box_size", defaults.box_size)),
             levels=coerce_int(d.get("levels", defaults.levels)),
             margin=coerce_float(d.get("margin", defaults.margin)),
-            material=SnowMaterialConfig.from_dict(d.get("material")),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -76,7 +40,6 @@ class SnowConfig:
             "box_size": self.box_size,
             "levels": self.levels,
             "margin": self.margin,
-            "material": self.material.to_dict(),
         }
 
 

@@ -36,13 +36,6 @@ TransmitterConfig = tuple[str, Position3D, float]
 Resolution = tuple[int, int]
 
 
-# Infinite thickness to prevent any transmition though mountain
-terrain_material = ITURadioMaterial(name="avasimrt_terrain",
-                                    itu_type="wet_ground",
-                                    thickness=float("inf"),
-                                    scattering_coefficient=0.3,
-                                    color=(0.45, 0.35, 0.25))
-
 class _SionnaContext:
     def __init__(self,
                  scene: Scene,
@@ -140,6 +133,13 @@ def _setup_scene(*,
                            merge_shapes=False)
     else:
         scene = load_scene()
+
+    # Infinite thickness to prevent any transmition though mountain
+    terrain_material = ITURadioMaterial(name="avasimrt_terrain",
+                                    itu_type="wet_ground",
+                                    thickness=float("inf"),
+                                    scattering_coefficient=0.3,
+                                    color=(0.45, 0.35, 0.25))
 
     scene.add(terrain_material)
 
@@ -297,7 +297,7 @@ def estimate_channelstate(
         )
         logger.info("Snow scene prepared with %d spheres", n_snow)
 
-        snow = Snow(cfg.snow.material.itu_type, cfg.snow.material.thickness, cfg.snow.material.scattering_coefficient)
+        snow = Snow(thickness=cfg.snow.box_size)
 
     unpacked_anchors = [(a.id, (a.x, a.y, a.z), a.size) for a in anchors]
 

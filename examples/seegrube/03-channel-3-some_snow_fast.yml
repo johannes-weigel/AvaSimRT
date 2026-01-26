@@ -1,0 +1,69 @@
+obj: examples/seegrube/assets/scene.obj
+xml: examples/seegrube/assets/scene.xml
+meshes: examples/seegrube/assets/meshes
+heightmap:
+  npy: examples/seegrube/assets/heightmap.npy
+trajectory:
+  save: true
+  plots_png: true
+  plots_html: true
+nodes:
+  - id: "Node"
+    x: -180
+    y: 380
+motion:
+  time:
+    sim_time: 60
+    sampling_rate: 5
+
+  terrain:
+    lateral_friction: 0.5
+    rolling_friction: 0.0
+    spinning_friction: 0.0
+    restitution: 0.0
+    contact_damping: -1
+    contact_stiffness: -1
+
+  node:
+    lateral_friction: 0.5
+    rolling_friction: 0.0
+    spinning_friction: 0.0
+    restitution: 0.0
+    linear_damping: 0.04
+    angular_damping: 0.04
+    contact_damping: -1
+    contact_stiffness: -1
+
+anchors:
+  - id: "1"
+    x: -190
+    y: 310
+  - id: "2"
+    x: -150
+    y: 135
+  - id: "3"
+    x: -65
+    y: 165
+  - id: "4"
+    x: -85
+    y: 352
+  - id: "5"
+    x: -190
+    y: 415
+
+channelstate:
+  debug: true
+  save: true
+  render:
+    enabled: true
+    every_n_steps: 20
+    camera_x: 150
+    camera_y: -235
+    camera_z: 800
+  channel:
+    reflection_depth: 30
+  snow:
+    enabled: true
+    box_size: 1
+    levels: 3
+    margin: 10.0
