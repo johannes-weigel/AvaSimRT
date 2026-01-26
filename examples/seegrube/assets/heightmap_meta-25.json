@@ -1,0 +1,29 @@
+{
+  "resolution_m": 25.0,
+  "computation_time_s": 0.1067,
+  "bounds": {
+    "x_min": -483.595398,
+    "x_max": 501.921997,
+    "y_min": -482.416748,
+    "y_max": 507.111267
+  },
+  "grid_size": {
+    "n_x": 41,
+    "n_y": 41,
+    "total_positions": 1681
+  },
+  "heightmap_stats": {
+    "z_min": 15.19074821472168,
+    "z_max": 737.1465454101562,
+    "z_range": 721.9557971954346
+  },
+  "coverage": {
+    "valid_positions": 1521,
+    "coverage_percent": 90.48
+  },
+  "memory": {
+    "bytes": 20172,
+    "kilobytes": 19.7,
+    "megabytes": 0.0192
+  }
+}
