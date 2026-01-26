@@ -10,7 +10,7 @@ import numpy as np
 from scipy.spatial import Delaunay
 from shapely.geometry import MultiPoint, Point, Polygon
 from shapely.ops import unary_union
-from sionna.rt import ITURadioMaterial, Scene
+from sionna.rt import ITURadioMaterial, Scene, RadioMaterial
 
 from avasimrt.motion.result import NodeSnapshot
 from avasimrt.preprocessing.result import ResolvedPosition
@@ -21,6 +21,37 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 SNOW_SPHERE_PREFIX = "snow_"
+
+
+def ulaby_long_snow_dielectric(Ps: float, mv: float, f_ghz: float) -> tuple[float, float]:
+    """
+    Calculate complex dielectric constant of snow using Ulaby & Long model.
+
+    Source: Microwave Radar and Radiometric Remote Sensing (Ulaby & Long, 2014)
+    Section 4-6.2, Code 4.6
+
+    Args:
+        Ps: Dry snow density (g/cm³), typical range 0.1-0.5
+        mv: Volumetric water content (%), range 0-30 (use ~0.5 for dry snow)
+        f_ghz: Frequency in GHz
+
+    Returns:
+        (eps_real, eps_imag): Real and imaginary parts of relative permittivity
+    """
+    A1 = 0.78 + 0.03 * f_ghz - 0.58e-3 * f_ghz**2
+    A2 = 0.97 - 0.39e-2 * f_ghz + 0.39e-3 * f_ghz**2
+    B1 = 0.31 - 0.05 * f_ghz + 0.87e-3 * f_ghz**2
+
+    A = A1 * (1.0 + 1.83 * Ps + 0.02 * mv**1.015) + B1
+    B = 0.073 * A1
+    C = 0.073 * A2
+    x = 1.31
+    f0 = 9.07
+
+    eps_real = A + (B * mv**x) / (1 + (f_ghz / f0)**2)
+    eps_imag = (C * (f_ghz / f0) * mv**x) / (1 + (f_ghz / f0)**2)
+
+    return eps_real, eps_imag
 
 
 def _build_alpha_shape(points: np.ndarray, alpha: float, margin: float) -> Polygon:
@@ -141,6 +172,9 @@ def extract_relevant_heightmap(
 def create_sphere_ply(filepath: Path, radius: float, n_lat: int = 16, n_lon: int = 32) -> None:
     """Create a PLY file containing a sphere mesh with the given radius.
 
+    WARNING: Sionna does NOT support transmission through closed 3D objects like spheres.
+    Use create_disk_ply() instead for snow obstacles that rays should pass through.
+
     Args:
         filepath: Path where the PLY file will be written.
         radius: Radius of the sphere.
@@ -168,6 +202,62 @@ def create_sphere_ply(filepath: Path, radius: float, n_lat: int = 16, n_lon: int
             v3 = (i + 1) * n_lon + (j + 1) % n_lon
             faces.append([v0, v2, v1])
             faces.append([v1, v2, v3])
+
+    faces = np.array(faces, dtype=np.int32)
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    with open(filepath, "wb") as f:
+        header = f"""ply
+format binary_little_endian 1.0
+element vertex {len(vertices)}
+property float x
+property float y
+property float z
+element face {len(faces)}
+property list uchar int vertex_indices
+end_header
+"""
+        f.write(header.encode("ascii"))
+        vertices.tofile(f)
+        for face in faces:
+            f.write(np.uint8(3).tobytes())
+            f.write(face.tobytes())
+
+
+def create_disk_ply(filepath: Path, radius: float, n_segments: int = 32) -> None:
+    """Create a PLY file containing a flat disk (thin surface) in the XZ plane.
+
+    Sionna models transmission through thin surfaces using the material's thickness
+    parameter. This disk is suitable for modeling snow layers that rays pass through.
+
+    The disk is oriented in the XZ plane (vertical, facing Y direction), which is
+    suitable for obstacles between TX and RX along the Y axis.
+
+    Args:
+        filepath: Path where the PLY file will be written.
+        radius: Radius of the disk.
+        n_segments: Number of segments around the circumference.
+    """
+    # Center vertex + circumference vertices
+    vertices = [[0.0, 0.0, 0.0]]  # Center at origin
+
+    for i in range(n_segments):
+        angle = 2 * np.pi * i / n_segments
+        x = radius * np.cos(angle)
+        z = radius * np.sin(angle)
+        vertices.append([x, 0.0, z])  # Disk in XZ plane (vertical)
+
+    vertices = np.array(vertices, dtype=np.float32)
+
+    # Create triangular faces (fan from center)
+    faces = []
+    for i in range(n_segments):
+        v1 = i + 1
+        v2 = (i + 1) % n_segments + 1
+        # Front face
+        faces.append([0, v1, v2])
+        # Back face (reversed winding for double-sided)
+        faces.append([0, v2, v1])
 
     faces = np.array(faces, dtype=np.int32)
 
@@ -290,24 +380,61 @@ def prepare_snow_scene(
 
 
 class Snow:
+    """Snow material for Sionna ray tracing using Ulaby & Long (2014) model.
 
-    def __init__(self, 
-                 type: str | None = None,
-                 thickness: float | None = None,
-                 scattering_coef: float | None = None,
-                 relative_permittivity: float | None = None,
-                 conductivity: float | None = None,
-                 color: tuple[float, float, float] = (0.95, 0.97, 1.0)):
-        self._material = ITURadioMaterial(
+    Material properties are calculated from physical snow parameters:
+    - Ps: Dry snow density (g/cm³)
+    - mv: Volumetric water content (%)
+    - freq_hz: Frequency (Hz)
+
+    The model computes complex permittivity (ε' + jε'') which determines:
+    - ε': Refractive index n = √ε' (affects wave speed, reflection)
+    - ε'': Absorption loss (converted to conductivity σ for Sionna)
+
+    A calibration factor adjusts conductivity so Sionna's transmission model
+    matches theoretical volume absorption from Ulaby & Long.
+    """
+
+    # Calibration: Sionna's model gives ~2x higher attenuation than theoretical
+    _CONDUCTIVITY_CALIBRATION = 2.1
+
+    def __init__(
+        self,
+        thickness_m: float = 1.0,
+        Ps: float = 0.4,
+        mv: float = 0.5,
+        freq_hz: float = 3.5e9,
+        color: tuple[float, float, float] = (0.95, 0.97, 1.0),
+    ):
+        """Initialize snow material from physical parameters.
+
+        Args:
+            thickness_m: Snow thickness in meters (default: 1.0)
+            Ps: Dry snow density in g/cm³ (default: 0.4, typical for avalanche debris)
+            mv: Volumetric water content in % (default: 0.5, nearly dry snow)
+            freq_hz: Frequency in Hz (default: 3.5 GHz)
+            color: RGB color tuple for visualization
+        """
+        freq_ghz = freq_hz / 1e9
+        eps_r, eps_i = ulaby_long_snow_dielectric(Ps, mv, freq_ghz)
+
+        # Convert ε'' to conductivity: σ = ωε₀ε'' / calibration
+        epsilon_0 = 8.854e-12
+        sigma = 2 * np.pi * freq_hz * epsilon_0 * eps_i / self._CONDUCTIVITY_CALIBRATION
+
+        logger.info(
+            "Snow(Ps=%.2f g/cm³, mv=%.1f%%, f=%.2f GHz, d=%.2f m): ε'=%.3f, ε''=%.4f, σ=%.6f S/m",
+            Ps, mv, freq_ghz, thickness_m, eps_r, eps_i, sigma
+        )
+
+        self._material = RadioMaterial(
             name="avasimrt_snow",
-            itu_type=type if type else "concrete",
-            relative_permittivity=relative_permittivity if relative_permittivity else 3.0,
-            conductivity=conductivity if conductivity else 0.001,
-            thickness=thickness if thickness else 1,
-            scattering_coefficient=scattering_coef if scattering_coef else 0.0,
+            relative_permittivity=eps_r,
+            conductivity=sigma,
+            thickness=thickness_m,
             color=color,
         )
-        self.thickness = thickness if thickness else 1
+        self.thickness = thickness_m
 
     def apply_material(self, scene: Scene) -> None:
         snow_objects = [name for name in scene.objects if name.startswith(SNOW_SPHERE_PREFIX)]

@@ -297,7 +297,7 @@ def estimate_channelstate(
         )
         logger.info("Snow scene prepared with %d spheres", n_snow)
 
-        snow = Snow(thickness=cfg.snow.box_size)
+        snow = Snow(thickness_m=cfg.snow.box_size)
 
     unpacked_anchors = [(a.id, (a.x, a.y, a.z), a.size) for a in anchors]
 
