@@ -6,3 +6,4 @@ examples/nordkette/assets/heightmap.npy filter=lfs diff=lfs merge=lfs -text
 examples/seegrube/assets/channelstate_without/Node.npz filter=lfs diff=lfs merge=lfs -text
 examples/seegrube/assets/heightmap-*.npy filter=lfs diff=lfs merge=lfs -text
 examples/seegrube/assets/trajectories-*/*.npz filter=lfs diff=lfs merge=lfs -text
+examples/seegrube/assets/channelstate-without_snow-*/*.npz filter=lfs diff=lfs merge=lfs -text

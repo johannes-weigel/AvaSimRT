@@ -1,0 +1,49 @@
+{
+  "created_at": "2026-01-26T16:29:31.283626+00:00",
+  "total_duration_s": 3.5745036759763025,
+  "node_durations_sum_s": 3.52846793102799,
+  "config": {
+    "channel": {
+      "freq_center": 3800000000.0,
+      "sc_num": 101,
+      "sc_spacing": 5000000.0,
+      "reflection_depth": 3,
+      "seed": 41
+    },
+    "render": {
+      "enabled": false,
+      "every_n_steps": 0,
+      "width": 640,
+      "height": 360,
+      "camera_x": 0.0,
+      "camera_y": 0.0,
+      "camera_z": 100.0
+    },
+    "snow": {
+      "enabled": false,
+      "box_size": 1.0,
+      "levels": 1,
+      "margin": 10.0
+    },
+    "debug": false
+  },
+  "versions": {
+    "python": "3.11.7",
+    "sionna": "1.2.1",
+    "numpy": "1.26.4"
+  },
+  "anchors_hash_sha256": "c68e0f63106b2240376de2264c9c2c9514dc5f46fe848124566e45ef1924157d",
+  "scene_xml_hash_sha256": "65ebcd5cd40c517df3dde79fb925984f0463b631dc4709b55084a4eac72c0e19",
+  "nodes": {
+    "Node 1": {
+      "file": "Node 1.npz",
+      "file_hash_sha256": "41256d5ff699954dc5562c8e349361a409122e2b19aae57c5ea35f2690f4e7af",
+      "trajectory_hash_sha256": "f6c6e80f8d7bd60c360518a11ccfc7a82f2c52d91836c22e2409c4dae6b76b84",
+      "duration_s": 3.52846793102799,
+      "n_samples": 12,
+      "n_anchors": 5,
+      "n_antennas": 2,
+      "n_frequencies": 101
+    }
+  }
+}
