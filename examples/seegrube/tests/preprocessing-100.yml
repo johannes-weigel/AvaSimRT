@@ -1,0 +1,3 @@
+blender: examples/seegrube/assets/scene.blend
+heightmap:
+  resolution: 100
