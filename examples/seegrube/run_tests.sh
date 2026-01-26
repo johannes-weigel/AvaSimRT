@@ -94,6 +94,50 @@ for res in $PREPROCESSING_RESOLUTIONS; do
     fi
 done
 
+# ===========================================
+# Step 3: Run motion simulation tests
+# ===========================================
+echo ""
+echo "=== MOTION SIMULATIONS ==="
+echo ""
+
+# Motion resolutions to test
+MOTION_RESOLUTIONS="0.2 0.5 1 2 5 10 20"
+
+for res in $MOTION_RESOLUTIONS; do
+    config="$TESTS_DIR/motion-${res}.yml"
+    if [ -f "$config" ]; then
+        echo "----------------------------------------"
+        echo "Running: motion-${res}.yml"
+        echo "----------------------------------------"
+
+        output=$(avasimrt --config "$config")
+        echo "$output"
+
+        # Extract output directory
+        output_dir=$(echo "$output" | grep -oP 'output/[a-f0-9]+' | tail -1)
+
+        if [ -n "$output_dir" ] && [ -d "$output_dir" ]; then
+            echo ""
+            echo "Copying trajectories folder as trajectories-${res}..."
+
+            # Copy trajectories folder with suffix
+            if [ -d "$output_dir/trajectories" ]; then
+                mkdir -p "$ASSETS_DIR/trajectories-${res}"
+                cp -r "$output_dir/trajectories/"* "$ASSETS_DIR/trajectories-${res}/"
+                echo "  Copied: trajectories-${res}/"
+            else
+                echo "  Warning: trajectories folder not found in $output_dir"
+            fi
+        else
+            echo "Warning: Could not find output directory for motion-${res}"
+        fi
+        echo ""
+    else
+        echo "Warning: Config not found: $config"
+    fi
+done
+
 echo ""
 echo "=========================================="
 echo "All tests completed!"

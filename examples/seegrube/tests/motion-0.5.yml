@@ -1,0 +1,33 @@
+obj: examples/seegrube/assets/scene.obj
+xml: examples/seegrube/assets/scene.xml
+meshes: examples/seegrube/assets/meshes
+heightmap:
+  npy: examples/seegrube/assets/heightmap-100.npy # not relevant
+nodes:
+  - id: "Node 1"
+    x: -180
+    y: 380
+  - id: "Node 2"
+    x: -220
+    y: 380
+  - id: "Node 3"
+    x: -140
+    y: 380
+  - id: "Node 4"
+    x: -190
+    y: 350
+  - id: "Node 5"
+    x: -160
+    y: 350
+  - id: "Node 6"
+    x: -100
+    y: 350
+
+trajectory:
+  save: true
+  plots_png: true
+  plots_html: true
+
+motion:
+  time:
+    sampling_rate: 0.5
