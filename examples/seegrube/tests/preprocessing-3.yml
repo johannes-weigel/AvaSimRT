@@ -1,3 +1,5 @@
-blender: examples/seegrube/assets/scene.blend
+obj: examples/seegrube/assets/scene.obj
+xml: examples/seegrube/assets/scene.xml
+meshes: examples/seegrube/assets/meshes
 heightmap:
   resolution: 3
