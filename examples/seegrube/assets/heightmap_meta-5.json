@@ -1,6 +1,6 @@
 {
   "resolution_m": 5.0,
-  "computation_time_s": 1.0326,
+  "computation_time_s": 0.9833,
   "bounds": {
     "x_min": -483.595398,
     "x_max": 501.921997,
