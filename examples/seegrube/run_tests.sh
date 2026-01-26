@@ -195,6 +195,53 @@ for res in $CHANNELSTATE_RESOLUTIONS; do
 done
 fi  # End Step 4
 
+# ===========================================
+# Step 5: Run channelstate with snow tests
+# ===========================================
+if [ $START_STEP -le 4 ]; then
+echo ""
+echo "=== CHANNELSTATE WITH SNOW SIMULATIONS ==="
+echo ""
+
+# Channelstate with snow configurations (x-y pattern)
+# Format: channelstate-with_some_snow-x-y[_].yml
+SNOW_CONFIGS="20-10 20-10_ 20-5 20-5_ 20-2 20-2_ 20-1"
+
+for config_suffix in $SNOW_CONFIGS; do
+    config="$TESTS_DIR/channelstate-with_some_snow-${config_suffix}.yml"
+    if [ -f "$config" ]; then
+        echo "----------------------------------------"
+        echo "Running: channelstate-with_some_snow-${config_suffix}.yml"
+        echo "----------------------------------------"
+
+        output=$(avasimrt --config "$config")
+        echo "$output"
+
+        # Extract output directory
+        output_dir=$(echo "$output" | grep -oP 'output/[a-f0-9]+' | tail -1)
+
+        if [ -n "$output_dir" ] && [ -d "$output_dir" ]; then
+            echo ""
+            echo "Copying channelstate folder as channelstate-with_some_snow-${config_suffix}..."
+
+            # Copy channelstate folder with suffix
+            if [ -d "$output_dir/channelstate" ]; then
+                mkdir -p "$ASSETS_DIR/channelstate-with_some_snow-${config_suffix}"
+                cp -r "$output_dir/channelstate/"* "$ASSETS_DIR/channelstate-with_some_snow-${config_suffix}/"
+                echo "  Copied: channelstate-with_some_snow-${config_suffix}/"
+            else
+                echo "  Warning: channelstate folder not found in $output_dir"
+            fi
+        else
+            echo "Warning: Could not find output directory for channelstate-with_some_snow-${config_suffix}"
+        fi
+        echo ""
+    else
+        echo "Warning: Config not found: $config"
+    fi
+done
+fi  # End Step 5
+
 echo ""
 echo "=========================================="
 echo "All tests completed!"
