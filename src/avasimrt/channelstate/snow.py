@@ -301,12 +301,13 @@ class Snow:
         self._material = ITURadioMaterial(
             name="avasimrt_snow",
             itu_type=type if type else "concrete",
-            relative_permittivity=relative_permittivity if relative_permittivity else 1.4,
-            conductivity=conductivity if conductivity else 1e5,
+            relative_permittivity=relative_permittivity if relative_permittivity else 3.0,
+            conductivity=conductivity if conductivity else 0.001,
             thickness=thickness if thickness else 1,
             scattering_coefficient=scattering_coef if scattering_coef else 0.0,
             color=color,
         )
+        self.thickness = thickness if thickness else 1
 
     def apply_material(self, scene: Scene) -> None:
         snow_objects = [name for name in scene.objects if name.startswith(SNOW_SPHERE_PREFIX)]
