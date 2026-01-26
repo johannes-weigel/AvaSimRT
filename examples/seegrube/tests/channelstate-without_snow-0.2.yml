@@ -1,0 +1,28 @@
+obj: examples/seegrube/assets/scene.obj
+xml: examples/seegrube/assets/scene.xml
+meshes: examples/seegrube/assets/meshes
+heightmap:
+  npy: examples/seegrube/assets/heightmap-100.npy # not relevant
+trajectory:
+  cache_dir: examples/seegrube/assets/trajectories-0.2
+  cache_filter: "1"
+
+anchors:
+  - id: "1"
+    x: -190
+    y: 310
+  - id: "2"
+    x: -150
+    y: 135
+  - id: "3"
+    x: -65
+    y: 165
+  - id: "4"
+    x: -85
+    y: 352
+  - id: "5"
+    x: -190
+    y: 415
+
+channelstate:
+  save: true

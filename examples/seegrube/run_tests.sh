@@ -149,6 +149,52 @@ for res in $MOTION_RESOLUTIONS; do
 done
 fi  # End Step 3
 
+# ===========================================
+# Step 4: Run channelstate simulation tests
+# ===========================================
+if [ $START_STEP -le 3 ]; then
+echo ""
+echo "=== CHANNELSTATE SIMULATIONS ==="
+echo ""
+
+# Channelstate resolutions to test
+CHANNELSTATE_RESOLUTIONS="0.2 0.5 1 2 5 10 20"
+
+for res in $CHANNELSTATE_RESOLUTIONS; do
+    config="$TESTS_DIR/channelstate-without_snow-${res}.yml"
+    if [ -f "$config" ]; then
+        echo "----------------------------------------"
+        echo "Running: channelstate-without_snow-${res}.yml"
+        echo "----------------------------------------"
+
+        output=$(avasimrt --config "$config")
+        echo "$output"
+
+        # Extract output directory
+        output_dir=$(echo "$output" | grep -oP 'output/[a-f0-9]+' | tail -1)
+
+        if [ -n "$output_dir" ] && [ -d "$output_dir" ]; then
+            echo ""
+            echo "Copying channelstate folder as channelstate-${res}..."
+
+            # Copy channelstate folder with suffix
+            if [ -d "$output_dir/channelstate" ]; then
+                mkdir -p "$ASSETS_DIR/channelstate-${res}"
+                cp -r "$output_dir/channelstate/"* "$ASSETS_DIR/channelstate-${res}/"
+                echo "  Copied: channelstate-${res}/"
+            else
+                echo "  Warning: channelstate folder not found in $output_dir"
+            fi
+        else
+            echo "Warning: Could not find output directory for channelstate-without_snow-${res}"
+        fi
+        echo ""
+    else
+        echo "Warning: Config not found: $config"
+    fi
+done
+fi  # End Step 4
+
 echo ""
 echo "=========================================="
 echo "All tests completed!"
