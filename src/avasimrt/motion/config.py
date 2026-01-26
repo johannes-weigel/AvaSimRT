@@ -73,11 +73,11 @@ class MotionDebug:
 @dataclass(frozen=True, slots=True)
 class TerrainDynamics:
     restitution: float = 0.0
-    lateral_friction: float = 0.1
-    rolling_friction: float = 0.001
-    spinning_friction: float = 0.001
-    contact_damping: float = 500.0
-    contact_stiffness: float = 30000.0
+    lateral_friction: float = 0.5
+    rolling_friction: float = 0.0
+    spinning_friction: float = 0.0
+    contact_damping: float = -1.0
+    contact_stiffness: float = -1.0
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any] | None) -> "TerrainDynamics":
@@ -87,13 +87,13 @@ class TerrainDynamics:
 @dataclass(frozen=True, slots=True)
 class NodeDynamics:
     restitution: float = 0.0
-    lateral_friction: float = 0.05
-    rolling_friction: float = 0.001
-    spinning_friction: float = 0.001
-    linear_damping: float = 0.001
-    angular_damping: float = 0.001
-    contact_damping: float = 500.0
-    contact_stiffness: float = 30000.0
+    lateral_friction: float = 0.5
+    rolling_friction: float = 0.0
+    spinning_friction: float = 0.0
+    linear_damping: float = 0.04
+    angular_damping: float = 0.04
+    contact_damping: float = -1.0
+    contact_stiffness: float = -1.0
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any] | None) -> "NodeDynamics":
