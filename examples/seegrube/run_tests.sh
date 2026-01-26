@@ -1,9 +1,13 @@
 #!/bin/bash
 
 # Run all seegrube test configurations and copy outputs to assets
-# Usage: ./run_tests.sh
+# Usage: ./run_tests.sh [start_step]
+#   start_step: 0 (default, all steps), 1 (skip blender), 2 (skip preprocessing), 3 (skip motion)
 
 set -e
+
+# Parse start step argument
+START_STEP=${1:-0}
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TESTS_DIR="$SCRIPT_DIR/tests"
@@ -14,12 +18,14 @@ cd "$PROJECT_ROOT"
 
 echo "=========================================="
 echo "Running seegrube test configurations"
+echo "Starting from step: $START_STEP"
 echo "=========================================="
 echo ""
 
 # ===========================================
 # Step 1: Run preprocessing-blender.yml
 # ===========================================
+if [ $START_STEP -le 0 ]; then
 echo "=== PREPROCESSING: BLENDER ==="
 echo ""
 
@@ -55,10 +61,12 @@ if [ -f "$config" ]; then
 else
     echo "Warning: Config not found: $config"
 fi
+fi  # End Step 1
 
 # ===========================================
 # Step 2: Run heightmap preprocessing tests
 # ===========================================
+if [ $START_STEP -le 1 ]; then
 echo "=== PREPROCESSING: HEIGHTMAPS ==="
 echo ""
 
@@ -93,10 +101,12 @@ for res in $PREPROCESSING_RESOLUTIONS; do
         echo "Warning: Config not found: $config"
     fi
 done
+fi  # End Step 2
 
 # ===========================================
 # Step 3: Run motion simulation tests
 # ===========================================
+if [ $START_STEP -le 2 ]; then
 echo ""
 echo "=== MOTION SIMULATIONS ==="
 echo ""
@@ -137,6 +147,7 @@ for res in $MOTION_RESOLUTIONS; do
         echo "Warning: Config not found: $config"
     fi
 done
+fi  # End Step 3
 
 echo ""
 echo "=========================================="
