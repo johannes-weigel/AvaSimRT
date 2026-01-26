@@ -48,7 +48,7 @@ class ChannelConfig:
     freq_center: float = 3.8e9
     sc_num: int = 101
     sc_spacing: float = 5e6
-    reflection_depth: int = 3
+    reflection_depth: int = 50
     seed: int = 41
 
     def __post_init__(self) -> None:
