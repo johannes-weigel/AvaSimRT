@@ -70,7 +70,9 @@ def run(config: SimConfig, blender_cmd: str | None = None) -> SimResult:
         # 1) MOTION (PyBullet)
         if config.trajectory_cache_dir is not None:
             with log_step("MOTION (from cache)"):
-                trajectories = load_all_trajectories(config.trajectory_cache_dir)
+                trajectories = load_all_trajectories(
+                    config.trajectory_cache_dir, config.trajectory_cache_filter
+                )
         else:
             if len(nodes) == 0:
                 return SimResult(

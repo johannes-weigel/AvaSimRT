@@ -86,13 +86,18 @@ def load_trajectory(path: Path) -> list[Sample]:
     return samples
 
 
-def load_all_trajectories(cache_dir: Path) -> dict[str, list[Sample]]:
+def load_all_trajectories(
+    cache_dir: Path, cache_filter: str | None = None
+) -> dict[str, list[Sample]]:
     if not cache_dir.is_dir():
         raise ValueError(f"Trajectory cache directory does not exist: {cache_dir}")
 
     results: dict[str, list[Sample]] = {}
     for npz_path in sorted(cache_dir.glob("*.npz")):
         node_id = npz_path.stem
+        if cache_filter is not None and cache_filter not in node_id:
+            logger.debug("Skipping trajectory '%s' (filter: '%s')", node_id, cache_filter)
+            continue
         results[node_id] = load_trajectory(npz_path)
 
     logger.info("Loaded %d trajectories from %s", len(results), cache_dir)

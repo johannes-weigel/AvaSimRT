@@ -60,6 +60,7 @@ class SimConfig:
 
     # Trajectory caching and visualization
     trajectory_cache_dir: Path | None = None  # Load from this dir instead of simulating
+    trajectory_cache_filter: str | None = None  # Only load trajectories matching this filter
     trajectory_save: bool = False  # Save trajectories after simulation
     trajectory_plots_png: bool = False  # Save PNG visualizations
     trajectory_plots_html: bool = False  # Save interactive HTML visualizations
@@ -120,6 +121,7 @@ class SimConfig:
             heightmap_resolution=heightmap_resolution,
 
             trajectory_cache_dir=Path(trajectory_dict["cache_dir"]) if trajectory_dict.get("cache_dir") else None,
+            trajectory_cache_filter=str(trajectory_dict["cache_filter"]) if trajectory_dict.get("cache_filter") else None,
             trajectory_save=coerce_bool(trajectory_dict.get("save", False)),
             trajectory_plots_png=coerce_bool(trajectory_dict.get("plots_png", False)),
             trajectory_plots_html=coerce_bool(trajectory_dict.get("plots_html", False)),
