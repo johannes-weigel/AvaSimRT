@@ -81,10 +81,14 @@ def test_snow_performance(
     """Benchmark prepare_snow_scene and scene loading across different heightmap resolutions."""
 
     heighmaps = [
-        ("heightmap-100.npy", 100),
-        ("heightmap-50.npy", 50),
+        #("heightmap-100.npy", 100),
+        #("heightmap-50.npy", 50),
+        ("heightmap-25.npy", 25),
         ("heightmap-10.npy", 10),
         ("heightmap-5.npy", 5),
+        ("heightmap-4.npy", 4),
+        ("heightmap-3.npy", 3),
+        ("heightmap-2.npy", 2),
         ("heightmap-1.npy", 1),
         ("heightmap.npy", 0.5),
     ]
@@ -154,14 +158,14 @@ def test_snow_performance(
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-        res_labels = [f"{r.resolution}" for r in subset]
+        res_labels = [f"{r.resolution}×{r.resolution}m" for r in subset]
         x_pos = np.arange(len(subset))
 
         ax1.bar(x_pos - 0.2, [r.prepare_time for r in subset], 0.4, label='Prepare Time')
         ax1.bar(x_pos + 0.2, [r.load_time for r in subset], 0.4, label='Load Time')
-        ax1.set_xlabel('Resolution')
+        ax1.set_xlabel('Block Size')
         ax1.set_ylabel('Time (s)')
-        ax1.set_title('Time vs Resolution')
+        ax1.set_title('Time vs Block Size')
         ax1.set_xticks(x_pos)
         ax1.set_xticklabels(res_labels)
         ax1.legend()
@@ -184,9 +188,9 @@ def test_snow_performance(
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
         ax1.bar(x_pos, [r.prepare_time for r in subset], 0.4)
-        ax1.set_xlabel('Resolution')
+        ax1.set_xlabel('Block Size')
         ax1.set_ylabel('Time (s)')
-        ax1.set_title('Prepare Time vs Resolution')
+        ax1.set_title('Prepare Time vs Block Size')
         ax1.set_xticks(x_pos)
         ax1.set_xticklabels(res_labels)
 
@@ -204,9 +208,9 @@ def test_snow_performance(
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
         ax1.bar(x_pos, [r.load_time for r in subset], 0.4, color='tab:orange')
-        ax1.set_xlabel('Resolution')
+        ax1.set_xlabel('Block Size')
         ax1.set_ylabel('Time (s)')
-        ax1.set_title('Load Time vs Resolution')
+        ax1.set_title('Load Time vs Block Size')
         ax1.set_xticks(x_pos)
         ax1.set_xticklabels(res_labels)
 
